@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simulatore Quantitativo PAC vs PIC - Monte Carlo & Discounted PV</title>
+  <title>Simulatore Quantitativo PAC vs PIC - Cono di Ibbotson & Fiscalità</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -63,14 +63,14 @@
           <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
             PAC <span class="text-slate-400 font-light">vs</span> PIC <span class="bg-gradient-to-r from-brand-400 via-accent-400 to-pic-400 bg-clip-text text-transparent">Monte Carlo Quant</span>
           </h1>
-          <p class="text-xs text-slate-400 font-medium">10.000 Scenari • Valore Attuale (PV Discounted) • Merton Jump Martingale</p>
+          <p class="text-xs text-slate-400 font-medium">Cono di Ibbotson (1°-3° Quintile) • Sconto PV Flussi • Fiscalità Integrale</p>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
         <button id="quickInfoBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-700 text-xs text-slate-300 font-medium border border-slate-700 transition">
           <svg class="w-4 h-4 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          Fondamenti &amp; Teoria PV
+          Metodologia &amp; Teoria
         </button>
       </div>
     </div>
@@ -85,7 +85,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-slate-800">
             <h2 class="font-bold text-xs tracking-wider text-slate-300 uppercase flex items-center gap-2">
               <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-              Piano di Investimento
+              Parametri Piano
             </h2>
             <button id="resetDefaultsBtn" class="text-xs text-accent-400 hover:underline">Ripristina</button>
           </div>
@@ -127,12 +127,12 @@
               </div>
             </div>
 
-            <!-- Tasso Privo di Rischio rf per Attualizzazione PV -->
+            <!-- Attualizzazione PV Flussi Futuri -->
             <div class="p-3 bg-dark-900/90 rounded-xl border border-slate-800 space-y-2">
               <div class="flex items-center justify-between text-xs">
                 <label for="rfRate" class="text-slate-300 font-medium flex items-center gap-1">
                   <span>Tasso Sconto PV (r<sub>f</sub> %)</span>
-                  <span class="text-[10px] text-accent-400" title="Tasso privo di rischio usato per attualizzare i flussi futuri">(Risk-Free)</span>
+                  <span class="text-[10px] text-accent-400" title="Tasso privo di rischio per attualizzare i flussi futuri">(Risk-Free)</span>
                 </label>
                 <span id="rfRateDisplay" class="font-mono text-accent-400 font-semibold">2.5%</span>
               </div>
@@ -145,26 +145,23 @@
                   <span id="picEquivalentCapital" class="font-mono font-bold text-pic-400">€ 0</span>
                 </div>
                 <div class="flex justify-between text-[10px] text-slate-500">
-                  <span>Somma Nominale Versamenti:</span>
+                  <span>Totale Nominale Versamenti:</span>
                   <span id="picNominalSum" class="font-mono">€ 0</span>
                 </div>
-                <p class="text-[10px] text-slate-400 italic leading-tight pt-0.5">
-                  Se r<sub>f</sub> = 0%, il PIC usa la somma nominale non attualizzata.
-                </p>
               </div>
             </div>
 
-            <!-- Parametri di Mercato (GBM) -->
+            <!-- Parametri Asset (GBM) -->
             <div class="pt-2 border-t border-slate-800 space-y-2.5">
               <div class="flex justify-between text-xs">
-                <span class="font-bold uppercase tracking-wider text-slate-400">Asset: Azionario Globale</span>
+                <span class="font-bold uppercase tracking-wider text-slate-400">Asset Azionario</span>
                 <span class="text-accent-400 text-[11px]">Parametri Annuali</span>
               </div>
 
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label for="expectedReturn" class="block text-[11px] text-slate-300 mb-0.5">Rend. Atteso (&mu; %)</label>
-                  <input type="number" id="expectedReturn" min="-10" max="30" step="0.1" value="5"
+                  <input type="number" id="expectedReturn" min="-10" max="30" step="0.1" value="5.0"
                     class="w-full bg-dark-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-white focus:border-brand-400 focus:outline-none">
                 </div>
                 <div>
@@ -183,7 +180,7 @@
               <div class="bg-dark-900/60 p-2.5 rounded-xl border border-slate-800 space-y-2">
                 <label class="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" id="enableJumps" class="rounded bg-dark-800 border-slate-700 text-brand-500 focus:ring-0" checked>
-                  <span class="text-xs font-semibold text-slate-200">Merton Jump Diffusion (Code Spesse)</span>
+                  <span class="text-xs font-semibold text-slate-200">Merton Jump Diffusion Corretto</span>
                 </label>
                 <div id="jumpParamsBox" class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
                   <div>
@@ -264,15 +261,15 @@
           </div>
         </div>
 
-        <!-- GRAFICO 1: EVOLUZIONE TEMPORALE FAN CHART -->
+        <!-- GRAFICO: CONI DI IBBOTSON A QUINTILI (Q20 - Q60) -->
         <div class="glass-panel p-5 rounded-2xl shadow-xl space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
             <div>
               <h2 class="text-base font-bold text-white flex items-center gap-2">
                 <svg class="w-5 h-5 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
-                Traiettorie di Ricchezza nel Tempo: PAC vs PIC (PV Discounted)
+                Coni di Ibbotson a Quintili: 1° Quintile (Q20) - 3° Quintile (Q60)
               </h2>
-              <p class="text-xs text-slate-400 mt-0.5">Fasce di confidenza 80% (P10 - P90) e mediane stocastiche cumulate</p>
+              <p id="chartSubTitle" class="text-xs text-slate-400 mt-0.5">Fascia interquintilica (20°-60° percentile) e traiettoria mediana centrale</p>
             </div>
             
             <div class="flex items-center gap-2 text-xs">
@@ -288,16 +285,16 @@
           </div>
 
           <div class="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs text-slate-400">
-            <div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-brand-400 rounded"></span><span class="text-slate-200">PAC Mediana</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-brand-500/20 border border-brand-500/50 rounded"></span><span>PAC Dispersione (P10-P90)</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-pic-400 rounded"></span><span class="text-slate-200">PIC Mediana</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-pic-500/20 border border-pic-500/50 rounded"></span><span>PIC Dispersione (P10-P90)</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-slate-400"></span><span>PAC Capitale Versato Cumulato</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-pic-400/70 border-b border-dashed border-pic-400"></span><span>PIC Base Capitale PV</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-brand-400 rounded"></span><span class="text-slate-200">PAC Mediana (Q50)</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-brand-500/20 border border-brand-500/50 rounded"></span><span>PAC Cono (1°-3° Quintile)</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-pic-400 rounded"></span><span class="text-slate-200">PIC Mediana (Q50)</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-pic-500/20 border border-pic-500/50 rounded"></span><span>PIC Cono (1°-3° Quintile)</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-slate-400"></span><span>PAC Totale Versato</span></div>
+            <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-pic-400/80 border-b border-dashed border-pic-400"></span><span>PIC Base Capitale PV</span></div>
           </div>
         </div>
 
-        <!-- GRAFICO 2 & 3: ISTOGRAMMA & DRAWDOWN -->
+        <!-- GRAFICI DI SUPPORTO: ISTOGRAMMA & DRAWDOWN -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div class="glass-panel p-5 rounded-2xl shadow-xl">
             <div class="mb-3">
@@ -305,7 +302,7 @@
                 <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 Distribuzione Valore Finale a Scadenza
               </h3>
-              <p class="text-xs text-slate-400">Confronto asimmetria e code log-normali (PAC vs PIC)</p>
+              <p class="text-xs text-slate-400">Densità di probabilità comparata a 15 anni</p>
             </div>
             <div class="relative w-full h-64">
               <canvas id="histogramChart"></canvas>
@@ -319,7 +316,7 @@
                   <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
                   Stress Test: Max Drawdown Subito
                 </h3>
-                <p class="text-xs text-slate-400">Calo massimo temporaneo dal picco durante il percorso</p>
+                <p class="text-xs text-slate-400">Distribuzione del peggior crollo percentuale lungo la durata</p>
               </div>
               <div class="relative w-full h-48">
                 <canvas id="mddChart"></canvas>
@@ -328,26 +325,26 @@
 
             <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800 text-center text-xs">
               <div class="bg-dark-900/60 p-2 rounded-xl border border-slate-800">
-                <span class="text-slate-400 block text-[10px]">Peggior Crollo Storico PAC</span>
+                <span class="text-slate-400 block text-[10px]">Peggior Drawdown Storico PAC</span>
                 <span id="worstPacMdd" class="font-mono font-bold text-emerald-400">-0.0%</span>
               </div>
               <div class="bg-dark-900/60 p-2 rounded-xl border border-slate-800">
-                <span class="text-slate-400 block text-[10px]">Peggior Crollo Storico PIC</span>
+                <span class="text-slate-400 block text-[10px]">Peggior Drawdown Storico PIC</span>
                 <span id="worstPicMdd" class="font-mono font-bold text-rose-400">-0.0%</span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- TABELLA QUANTITATIVA COMPLETA -->
+        <!-- TABELLA QUANTITATIVA: QUADRATURA FISCALE COMPLETA -->
         <div class="glass-panel p-5 rounded-2xl shadow-xl overflow-hidden">
-          <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-800">
             <div>
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
                 <svg class="w-4 h-4 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Matrice Statistica: Percentili, TIR Annualizzato &amp; Tasse
+                Matrice Statistica: Percentili, TIR Annualizzato &amp; Fiscalità Integrale
               </h3>
-              <p class="text-xs text-slate-400">Raffronto a parità di Valore Attuale (PV Discounted)</p>
+              <p id="tableSubTitle" class="text-xs text-slate-400">Raffronto a parità di Valore Attuale (PV). Lordo, Netto e Imposta 26% (Art. 67 TUIR) perfettamente bilanciati.</p>
             </div>
             <button id="copyStatsBtn" class="text-xs flex items-center gap-1 text-slate-300 hover:text-white px-2.5 py-1.5 bg-dark-900 rounded-lg border border-slate-700 transition">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
@@ -358,19 +355,25 @@
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
               <thead>
-                <tr class="text-slate-400 border-b border-slate-800 bg-dark-900/40">
-                  <th class="py-2.5 px-3 font-semibold">Percentile</th>
-                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-brand-300">PAC Netto (€)</th>
-                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-brand-400">PAC TIR Ann.</th>
-                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-pic-300">PIC Netto (€)</th>
-                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-pic-400">PIC CAGR Ann. (su PV)</th>
-                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-slate-300">Delta (€)</th>
-                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-rose-400">Imposta 26% PAC</th>
+                <tr class="text-slate-400 border-b border-slate-800 bg-dark-900/50">
+                  <th class="py-2.5 px-3 font-semibold">Percentile / Scenario</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-slate-400">PAC Lordo</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-brand-300">PAC Netto</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-brand-400">PAC TIR</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-rose-400/90">Tax PAC 26%</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-slate-400">PIC Lordo</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-pic-300">PIC Netto</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-pic-400">PIC CAGR</th>
+                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-rose-400/90">Tax PIC 26%</th>
+                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-slate-200">Delta Netto</th>
                 </tr>
               </thead>
               <tbody id="statsTableBody" class="divide-y divide-slate-800/60 font-mono">
               </tbody>
             </table>
+          </div>
+          <div class="mt-3 text-[11px] text-slate-500 italic">
+            * Nota: L'imposta sostitutiva italiana (26%) grava sulla plusvalenza nominale realizzata (Art. 67 TUIR). In modalità Potere d'Acquisto Reale, tutte le colonne (Lordo, Netto, Imposta) sono convertite a valori costanti dell'anno 0, preservando rigorosamente la relazione: Lordo - Imposta = Netto.
           </div>
         </div>
 
@@ -389,22 +392,21 @@
       </div>
 
       <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
-        <p><strong>1. Attualizzazione dei Flussi Futuri (Valore Attuale - PV):</strong><br>
-        Investire 300 € al mese per 15 anni non equivale finanziariamente ad avere l'intera somma nominale al giorno 0. Il capitale di partenza del PIC viene calcolato attualizzando la rendita al tasso privo di rischio r<sub>f</sub>:<br>
+        <p><strong>1. Coni di Ibbotson a Quintili (1° e 3° Quintile):</strong><br>
+        La distribuzione Monte Carlo viene campionata per calcolare ad ogni passo temporale il <strong>1° Quintile ($Q_{20}$ = 20° percentile)</strong> e il <strong>3° Quintile ($Q_{60}$ = 60° percentile)</strong>, creando un cono di dispersione stocastico che racchiude la traiettoria mediana ($Q_{50}$) ed evidenzia l'asimmetria log-normale dei rendimenti.</p>
+
+        <p><strong>2. Attualizzazione dei Flussi Futuri (Valore Attuale - PV):</strong><br>
+        Il capitale di partenza del PIC viene calcolato attualizzando la rendita al tasso privo di rischio $r_f$:<br>
         <code class="block bg-dark-900 p-2 my-1 rounded border border-slate-800 font-mono text-pic-300">
           PV = S<sub>0</sub> + &sum; [ C / (1 + r<sub>f</sub>/m)<sup>k</sup> ]
         </code>
-        Se r<sub>f</sub> = 0%, PV coincide con la somma nominale totale. Se r<sub>f</sub> > 0%, il capitale iniziale del PIC è inferiore a quello nominale, rispecchiando il costo opportunità temporale del denaro.</p>
+        Se $r_f = 0\%$, il PIC utilizza la somma nominale totale. Se $r_f > 0\%$, il capitale iniziale del PIC è scontato finanziariamente al tempo 0.</p>
 
-        <p><strong>2. Compensazione di Martingala per i Salti di Merton:</strong><br>
-        Per preservare il rendimento atteso &mu; inserito dall'utente evitando il drag artificiale dei crolli, il modello applica la compensazione di Merton al drift di diffusione:<br>
-        <code class="block bg-dark-900 p-2 my-1 rounded border border-slate-800 font-mono text-accent-300">
-          drift_dt = (&mu; - TER - &lambda;&times;E[J] - 0.5&sigma;&sup2;) &times; &Delta;t
-        </code>
-        Questo permette di simulare code spesse e crolli improvvisi senza abbattere artificiosamente il trend geometrico di lungo periodo.</p>
+        <p><strong>3. Merton Jump Diffusion con Compensazione di Martingala:</strong><br>
+        I crolli casuali di mercato vengono simulati tramite un processo di Poisson con intensità media negativa. La compensazione sul drift previene l'erosione artificiale del rendimento geometrico medio impostato dall'utente.</p>
 
-        <p><strong>3. Rendimento Omogeneo (TIR vs CAGR su PV):</strong><br>
-        Il PAC utilizza un algoritmo di bisezione numerica per calcolare il Tasso Interno di Rendimento (IRR) su ciascun versamento periodico, confrontato direttamente con il CAGR del PIC calcolato sul suo Valore Attuale (PV).</p>
+        <p><strong>4. Fiscalità Italiana e Relazione di Fisher:</strong><br>
+        L'imposta del 26% viene applicata sulla plusvalenza nominale al termine del piano. I tassi annualizzati (TIR del PAC e CAGR del PIC) vengono convertiti al tasso reale tramite l'equazione di Fisher: $(1 + r_{\text{reale}}) = (1 + r_{\text{nominale}}) / (1 + \pi)$.</p>
       </div>
       <div class="text-right pt-2 border-t border-slate-800">
         <button id="closeInfoBtn2" class="px-4 py-2 rounded-xl bg-accent-500 text-dark-950 font-bold text-xs hover:bg-accent-400 transition">Chiudi</button>
@@ -449,6 +451,8 @@
       viewGrossBtn: document.getElementById('viewGrossBtn'),
       viewNetBtn: document.getElementById('viewNetBtn'),
       copyStatsBtn: document.getElementById('copyStatsBtn'),
+      chartSubTitle: document.getElementById('chartSubTitle'),
+      tableSubTitle: document.getElementById('tableSubTitle'),
 
       statTotalCapital: document.getElementById('statTotalCapital'),
       statFeeDrag: document.getElementById('statFeeDrag'),
@@ -481,14 +485,10 @@
       return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
     }
 
-    // Calcolo esatto del Valore Attuale (Present Value - PV) dei versamenti del PAC
     function calculatePV(S0, recurring, freq, years, rf) {
       const N = freq * years;
-      if (rf <= 0) {
-        return S0 + recurring * N;
-      }
+      if (rf <= 0) return S0 + recurring * N;
       const rp = rf / freq;
-      // Formula rendita anticipata/posticipata per rate periodiche
       const annuityPV = recurring * (1 - Math.pow(1 + rp, -N)) / rp;
       return S0 + annuityPV;
     }
@@ -527,7 +527,6 @@
       const totalDeposited = p.S0 + (p.recurring * totalSteps);
       const totalFeesPaid = p.fixedFee * (1 + totalSteps);
 
-      // Capitale iniziale per PIC attualizzato a PV
       const pvPic = calculatePV(p.S0, p.recurring, p.freq, p.years, p.rf);
 
       const effMu = p.mu - p.ter;
@@ -612,7 +611,6 @@
       const inflationDiscount = Math.pow(1 + p.inflation, p.years);
       const toReal = (val) => p.showReal ? (val / inflationDiscount) : val;
 
-      // Calcolo netti con base imponibile corretta per ciascuna strategia
       const calcNetPac = (grossVal) => {
         const gain = grossVal - totalDeposited;
         const tax = gain > 0 ? (gain * 0.26) : 0;
@@ -642,15 +640,16 @@
 
       const getP = (arr, q) => arr[Math.min(arr.length - 1, Math.floor((q / 100) * arr.length))];
 
+      // Costruzione traiettorie temporali con 1° Quintile (Q20) e 3° Quintile (Q60)
       const fanData = { labels: sampleIndices.map(step => (step / p.freq).toFixed(0) + 'a') };
       ['gross', 'net'].forEach(mode => {
         fanData[mode] = {
-          pacP10: new Float32Array(numSamples),
-          pacP50: new Float32Array(numSamples),
-          pacP90: new Float32Array(numSamples),
-          picP10: new Float32Array(numSamples),
-          picP50: new Float32Array(numSamples),
-          picP90: new Float32Array(numSamples),
+          pacQ20: new Float32Array(numSamples),
+          pacQ50: new Float32Array(numSamples),
+          pacQ60: new Float32Array(numSamples),
+          picQ20: new Float32Array(numSamples),
+          picQ50: new Float32Array(numSamples),
+          picQ60: new Float32Array(numSamples),
           baselinePac: new Float32Array(numSamples),
           baselinePic: new Float32Array(numSamples)
         };
@@ -664,27 +663,27 @@
           const transformPac = (v) => {
             if (mode === 'gross') return p.showReal ? (v / inflAtT) : v;
             const gain = v - investedAtT;
-            const net = gain > 0 ? v - (gain * 0.26) : v;
+            const net = gain > 0 ? (v - gain * 0.26) : v;
             return p.showReal ? (net / inflAtT) : net;
           };
 
           const transformPic = (v) => {
             if (mode === 'gross') return p.showReal ? (v / inflAtT) : v;
             const gain = v - pvPic;
-            const net = gain > 0 ? v - (gain * 0.26) : v;
+            const net = gain > 0 ? (v - gain * 0.26) : v;
             return p.showReal ? (net / inflAtT) : net;
           };
 
           const pacCol = Array.from(pacTrajectories[s]).map(transformPac).sort((a,b)=>a-b);
           const picCol = Array.from(picTrajectories[s]).map(transformPic).sort((a,b)=>a-b);
 
-          fanData[mode].pacP10[s] = pacCol[Math.floor(0.10 * numSim)];
-          fanData[mode].pacP50[s] = pacCol[Math.floor(0.50 * numSim)];
-          fanData[mode].pacP90[s] = pacCol[Math.floor(0.90 * numSim)];
+          fanData[mode].pacQ20[s] = pacCol[Math.floor(0.20 * numSim)];
+          fanData[mode].pacQ50[s] = pacCol[Math.floor(0.50 * numSim)];
+          fanData[mode].pacQ60[s] = pacCol[Math.floor(0.60 * numSim)];
 
-          fanData[mode].picP10[s] = picCol[Math.floor(0.10 * numSim)];
-          fanData[mode].picP50[s] = picCol[Math.floor(0.50 * numSim)];
-          fanData[mode].picP90[s] = picCol[Math.floor(0.90 * numSim)];
+          fanData[mode].picQ20[s] = picCol[Math.floor(0.20 * numSim)];
+          fanData[mode].picQ50[s] = picCol[Math.floor(0.50 * numSim)];
+          fanData[mode].picQ60[s] = picCol[Math.floor(0.60 * numSim)];
 
           fanData[mode].baselinePac[s] = p.showReal ? (investedAtT / inflAtT) : investedAtT;
           fanData[mode].baselinePic[s] = p.showReal ? (pvPic / inflAtT) : pvPic;
@@ -708,9 +707,10 @@
     function updateDashboard(res) {
       lastResults = res;
       const p = res.params;
+      const inflFactor = p.showReal ? Math.pow(1 + p.inflation, p.years) : 1.0;
 
-      UI.statTotalCapital.textContent = `PV: ${formatCurrency(res.pvPic)}`;
-      UI.statFeeDrag.textContent = `Nominale: ${formatCurrency(res.totalDeposited)} | r_f: ${(p.rf*100).toFixed(1)}%`;
+      UI.statTotalCapital.textContent = `PV: ${formatCurrency(res.pvPic / inflFactor)}`;
+      UI.statFeeDrag.textContent = `Nominale: ${formatCurrency(res.totalDeposited / inflFactor)} | r_f: ${(p.rf*100).toFixed(1)}%`;
 
       UI.statPicWinRate.textContent = `${res.picWinRate.toFixed(1)}%`;
       UI.statPacWinRate.textContent = `PAC vince nel: ${res.pacWinRate.toFixed(1)}% dei casi`;
@@ -728,6 +728,14 @@
       UI.worstPacMdd.textContent = `-${(res.getP(res.sPacDD, 99.9) * 100).toFixed(1)}%`;
       UI.worstPicMdd.textContent = `-${(res.getP(res.sPicDD, 99.9) * 100).toFixed(1)}%`;
 
+      if (p.showReal) {
+        UI.chartSubTitle.textContent = `Fascia 1°-3° Quintile (Q20-Q60) in Potere d'Acquisto Reale deflazionato (Inflazione: ${(p.inflation*100).toFixed(1)}%)`;
+        UI.tableSubTitle.textContent = `Tutti i valori monetari sono deflazionati all'anno 0. Si rispetta rigorosamente: Lordo - Imposta = Netto.`;
+      } else {
+        UI.chartSubTitle.textContent = `Fascia interquintilica teorico-empirica (20°-60° percentile) e traiettorie mediane nominali`;
+        UI.tableSubTitle.textContent = `Valori nominali a scadenza. Imposta 26% (Art. 67 TUIR) calcolata su plusvalenza reale/nominale.`;
+      }
+
       renderStatsTable(res);
       renderFanChart(res);
       renderHistogram(res);
@@ -736,33 +744,72 @@
 
     function renderStatsTable(res) {
       const p = res.params;
+      const inflFactor = p.showReal ? Math.pow(1 + p.inflation, p.years) : 1.0;
+
       const quantiles = [
         { label: 'P10 (Scenario molto sfavorevole)', q: 10 },
+        { label: 'P20 (1° Quintile - Q1)', q: 20, isQuintile: true },
         { label: 'P25 (Primo Quartile)', q: 25 },
-        { label: 'P50 (Mediana)', q: 50, hl: true },
+        { label: 'P50 (Mediana - Q2)', q: 50, hl: true },
+        { label: 'P60 (3° Quintile - Q3)', q: 60, isQuintile: true },
         { label: 'P75 (Terzo Quartile)', q: 75 },
         { label: 'P90 (Scenario favorevole)', q: 90 },
       ];
 
       let html = '';
       quantiles.forEach(item => {
-        const pacNet = res.getP(res.sPacNet, item.q);
-        const picNet = res.getP(res.sPicNet, item.q);
-        const delta = picNet - pacNet;
+        // Valori Nominali grezzi
+        const pacGrossNom = res.getP(res.sPacGross, item.q);
+        const picGrossNom = res.getP(res.sPicGross, item.q);
 
-        const pacTir = calculatePAC_IRR(pacNet, p.S0, p.recurring, p.freq, p.years);
-        const picCagr = (Math.pow(picNet / res.pvPic, 1 / p.years) - 1) * 100;
-        const taxPac = Math.max(0, (res.getP(res.sPacGross, item.q) - res.totalDeposited) * 0.26);
+        // Plusvalenze e imposta nominale italiana (26%)
+        const pacGainNom = Math.max(0, pacGrossNom - res.totalDeposited);
+        const picGainNom = Math.max(0, picGrossNom - res.pvPic);
+        const pacTaxNom = pacGainNom * 0.26;
+        const picTaxNom = picGainNom * 0.26;
+
+        const pacNetNom = pacGrossNom - pacTaxNom;
+        const picNetNom = picGrossNom - picTaxNom;
+
+        // Omogeneizzazione Reale / Nominale per la visualizzazione grafica
+        const pacGrossDisp = pacGrossNom / inflFactor;
+        const pacNetDisp = pacNetNom / inflFactor;
+        const pacTaxDisp = pacTaxNom / inflFactor;
+
+        const picGrossDisp = picGrossNom / inflFactor;
+        const picNetDisp = picNetNom / inflFactor;
+        const picTaxDisp = picTaxNom / inflFactor;
+
+        // Rendimenti corretti (TIR per PAC e CAGR per PIC attualizzato su PV)
+        const pacTirNom = calculatePAC_IRR(pacNetNom, p.S0, p.recurring, p.freq, p.years);
+        const picCagrNom = (Math.pow(picNetNom / res.pvPic, 1 / p.years) - 1) * 100;
+
+        const pacTirDisp = p.showReal ? (((1 + pacTirNom / 100) / (1 + p.inflation) - 1) * 100) : pacTirNom;
+        const picCagrDisp = p.showReal ? (((1 + picCagrNom / 100) / (1 + p.inflation) - 1) * 100) : picCagrNom;
+
+        const deltaNet = picNetDisp - pacNetDisp;
+
+        const rowBg = item.hl 
+          ? 'bg-brand-500/10 font-bold text-white border-l-2 border-brand-400' 
+          : item.isQuintile 
+            ? 'bg-accent-500/5 font-medium text-slate-200' 
+            : 'hover:bg-dark-900/60 text-slate-300';
 
         html += `
-          <tr class="${item.hl ? 'bg-brand-500/10 font-bold text-white' : 'hover:bg-dark-900/60 text-slate-300'} transition">
-            <td class="py-2.5 px-3">${item.label}</td>
-            <td class="py-2.5 px-3 text-right text-brand-300 font-semibold">${formatCurrency(pacNet)}</td>
-            <td class="py-2.5 px-3 text-right text-brand-400">${formatPercent(pacTir, 2)}</td>
-            <td class="py-2.5 px-3 text-right text-pic-300 font-semibold">${formatCurrency(picNet)}</td>
-            <td class="py-2.5 px-3 text-right text-pic-400">${formatPercent(picCagr, 2)}</td>
-            <td class="py-2.5 px-3 text-right ${delta >= 0 ? 'text-pic-400' : 'text-brand-400'}">${formatCurrency(delta)}</td>
-            <td class="py-2.5 px-3 text-right text-rose-400/80">${formatCurrency(taxPac)}</td>
+          <tr class="${rowBg} transition">
+            <td class="py-2.5 px-3 flex items-center gap-1.5">
+              <span>${item.label}</span>
+              ${item.isQuintile ? '<span class="text-[9px] uppercase px-1 py-0.2 rounded bg-slate-800 text-accent-300 font-sans border border-slate-700">Cono</span>' : ''}
+            </td>
+            <td class="py-2.5 px-2.5 text-right text-slate-400">${formatCurrency(pacGrossDisp)}</td>
+            <td class="py-2.5 px-2.5 text-right text-brand-300 font-semibold">${formatCurrency(pacNetDisp)}</td>
+            <td class="py-2.5 px-2.5 text-right text-brand-400">${formatPercent(pacTirDisp, 2)}</td>
+            <td class="py-2.5 px-2.5 text-right text-rose-400/90">${formatCurrency(pacTaxDisp)}</td>
+            <td class="py-2.5 px-2.5 text-right text-slate-400">${formatCurrency(picGrossDisp)}</td>
+            <td class="py-2.5 px-2.5 text-right text-pic-300 font-semibold">${formatCurrency(picNetDisp)}</td>
+            <td class="py-2.5 px-2.5 text-right text-pic-400">${formatPercent(picCagrDisp, 2)}</td>
+            <td class="py-2.5 px-2.5 text-right text-rose-400/90">${formatCurrency(picTaxDisp)}</td>
+            <td class="py-2.5 px-3 text-right font-bold ${deltaNet >= 0 ? 'text-pic-400' : 'text-brand-400'}">${formatCurrency(deltaNet)}</td>
           </tr>
         `;
       });
@@ -779,56 +826,61 @@
         data: {
           labels: res.fanData.labels,
           datasets: [
+            // PIC CONO DI IBBOTSON A QUINTILI: Q60 (superiore) e Q20 (inferiore con fill)
             {
-              label: 'PIC Limite Sup. (P90)',
-              data: Array.from(d.picP90),
-              borderColor: 'rgba(251, 146, 60, 0.4)',
-              borderWidth: 1,
+              label: 'PIC 3° Quintile (Q60)',
+              data: Array.from(d.picQ60),
+              borderColor: 'rgba(251, 146, 60, 0.55)',
+              borderWidth: 1.5,
               pointRadius: 0,
               fill: false
             },
             {
-              label: 'PIC Intervallo P10-P90',
-              data: Array.from(d.picP10),
-              borderColor: 'rgba(251, 146, 60, 0.4)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(251, 146, 60, 0.08)',
-              fill: '-1',
+              label: 'PIC 1° Quintile (Q20)',
+              data: Array.from(d.picQ20),
+              borderColor: 'rgba(251, 146, 60, 0.55)',
+              borderWidth: 1.5,
+              backgroundColor: 'rgba(251, 146, 60, 0.12)',
+              fill: '-1', // Riempie l'area verso il dataset precedente (Q60)
               pointRadius: 0
             },
             {
-              label: 'PIC Mediana (P50)',
-              data: Array.from(d.picP50),
+              label: 'PIC Mediana (Q50)',
+              data: Array.from(d.picQ50),
               borderColor: '#f97316',
               borderWidth: 2.5,
               pointRadius: 2,
               fill: false
             },
+
+            // PAC CONO DI IBBOTSON A QUINTILI: Q60 (superiore) e Q20 (inferiore con fill)
             {
-              label: 'PAC Limite Sup. (P90)',
-              data: Array.from(d.pacP90),
-              borderColor: 'rgba(52, 211, 153, 0.4)',
-              borderWidth: 1,
+              label: 'PAC 3° Quintile (Q60)',
+              data: Array.from(d.pacQ60),
+              borderColor: 'rgba(52, 211, 153, 0.55)',
+              borderWidth: 1.5,
               pointRadius: 0,
               fill: false
             },
             {
-              label: 'PAC Intervallo P10-P90',
-              data: Array.from(d.pacP10),
-              borderColor: 'rgba(52, 211, 153, 0.4)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(16, 185, 129, 0.12)',
-              fill: '-1',
+              label: 'PAC 1° Quintile (Q20)',
+              data: Array.from(d.pacQ20),
+              borderColor: 'rgba(52, 211, 153, 0.55)',
+              borderWidth: 1.5,
+              backgroundColor: 'rgba(16, 185, 129, 0.15)',
+              fill: '-1', // Riempie l'area verso il dataset precedente (Q60)
               pointRadius: 0
             },
             {
-              label: 'PAC Mediana (P50)',
-              data: Array.from(d.pacP50),
+              label: 'PAC Mediana (Q50)',
+              data: Array.from(d.pacQ50),
               borderColor: '#10b981',
               borderWidth: 2.5,
               pointRadius: 2,
               fill: false
             },
+
+            // LINEE BASELINE CAPITALE
             {
               label: 'PAC Capitale Versato Cumulato',
               data: Array.from(d.baselinePac),
@@ -938,8 +990,8 @@
         data: {
           labels,
           datasets: [
-            { label: 'PAC (Rischio Mitigato)', data: pacCounts, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.3 },
-            { label: 'PIC (Esposizione Immediata)', data: picCounts, borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.15)', fill: true, tension: 0.3 }
+            { label: 'PAC (Rischio Diluito)', data: pacCounts, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.3 },
+            { label: 'PIC (Rischio Immediato)', data: picCounts, borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.15)', fill: true, tension: 0.3 }
           ]
         },
         options: {
@@ -963,7 +1015,7 @@
       return {
         S0, recurring, freq, years,
         rf: (parseFloat(UI.rfRate.value) || 0) / 100.0,
-        mu: (parseFloat(UI.expectedReturn.value) || 8.4) / 100.0,
+        mu: (parseFloat(UI.expectedReturn.value) || 5.0) / 100.0,
         sigma: (parseFloat(UI.volatility.value) || 15.0) / 100.0,
         enableJumps: UI.enableJumps.checked,
         jumpFreq: parseFloat(UI.jumpFreq.value) || 0.20,
@@ -1026,7 +1078,7 @@
       UI.frequency.value = '12';
       UI.horizonYears.value = 15;
       UI.rfRate.value = 2.5;
-      UI.expectedReturn.value = 8.4;
+      UI.expectedReturn.value = 5.0;
       UI.volatility.value = 15.0;
       UI.enableJumps.checked = true;
       UI.jumpFreq.value = 0.20;
@@ -1055,7 +1107,7 @@
 
     UI.copyStatsBtn.addEventListener('click', () => {
       const rows = UI.statsTableBody.querySelectorAll('tr');
-      let text = 'Percentile\tPAC Netto\tPAC TIR\tPIC Netto\tPIC CAGR (su PV)\tDelta\tTassa PAC 26%\n';
+      let text = 'Percentile\tPAC Lordo\tPAC Netto\tPAC TIR\tTax PAC 26%\tPIC Lordo\tPIC Netto\tPIC CAGR\tTax PIC 26%\tDelta Netto\n';
       rows.forEach(r => {
         const cols = Array.from(r.querySelectorAll('td')).map(c => c.innerText.trim());
         text += cols.join('\t') + '\n';
