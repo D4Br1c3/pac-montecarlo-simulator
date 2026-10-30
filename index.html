@@ -63,7 +63,7 @@
           <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
             PAC <span class="text-slate-400 font-light">vs</span> PIC <span class="bg-gradient-to-r from-brand-400 via-accent-400 to-pic-400 bg-clip-text text-transparent">Monte Carlo Quant</span>
           </h1>
-          <p class="text-xs text-slate-400 font-medium">10.000 Traiettorie • Merton Jump Diffusion • Drag Fiscale & Costi Reali</p>
+          <p class="text-xs text-slate-400 font-medium">10.000 Traiettorie • Merton Jump Diffusion Corretto • Drag Fiscale &amp; Costi Reali</p>
         </div>
       </div>
 
@@ -132,7 +132,7 @@
                 <span class="text-slate-400">Capitale Equivalente PIC:</span>
                 <span id="picEquivalentCapital" class="font-mono font-bold text-pic-400">59.000 €</span>
               </div>
-              <p class="text-[10px] text-slate-500 leading-tight">Il PIC investe l'intero ammontare equivalente al giorno 0 per garantire piena neutralità di confronto.</p>
+              <p class="text-[10px] text-slate-500 leading-tight">Il PIC investe l'intero ammontare al giorno 0 per garantire piena neutralità di confronto.</p>
             </div>
 
             <!-- Parametri di Mercato (GBM) -->
@@ -156,7 +156,7 @@
               </div>
             </div>
 
-            <!-- Moduli Quantitativi Nerd -->
+            <!-- Moduli Avanzati -->
             <div class="pt-2 border-t border-slate-800 space-y-3">
               <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Moduli Avanzati &amp; Frizioni</div>
 
@@ -220,28 +220,24 @@
 
         <!-- KPI SUMMARY CARDS: PAC vs PIC HEAD-TO-HEAD -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <!-- Totale Versato -->
           <div class="glass-panel p-4 rounded-2xl border-l-4 border-slate-400">
             <div class="text-[11px] text-slate-400 font-medium">Capitale Base Equivalente</div>
             <div id="statTotalCapital" class="text-lg font-bold font-mono text-white mt-1">€ 0</div>
             <div id="statFeeDrag" class="text-[10px] text-rose-400 font-mono mt-0.5">Drag commissioni: € 0</div>
           </div>
 
-          <!-- Win Rate PIC vs PAC -->
           <div class="glass-panel p-4 rounded-2xl border-l-4 border-pic-400">
             <div class="text-[11px] text-slate-400 font-medium">Head-to-Head: Win Rate PIC</div>
             <div id="statPicWinRate" class="text-lg font-bold font-mono text-pic-400 mt-1">0.0%</div>
             <div id="statPacWinRate" class="text-[10px] text-brand-400 font-mono mt-0.5">PAC vince: 0.0%</div>
           </div>
 
-          <!-- Mediana PAC vs PIC -->
           <div class="glass-panel p-4 rounded-2xl border-l-4 border-brand-400">
             <div class="text-[11px] text-slate-400 font-medium">Mediana Netta (Q50)</div>
             <div id="statPacMedianNet" class="text-lg font-bold font-mono text-brand-400 mt-1">PAC: € 0</div>
             <div id="statPicMedianNet" class="text-[10px] text-pic-400 font-mono mt-0.5">PIC: € 0</div>
           </div>
 
-          <!-- Max Drawdown a Confronto -->
           <div class="glass-panel p-4 rounded-2xl border-l-4 border-rose-500">
             <div class="text-[11px] text-slate-400 font-medium">Max Drawdown Mediano</div>
             <div id="statPacMdd" class="text-lg font-bold font-mono text-emerald-400 mt-1">PAC: -0.0%</div>
@@ -281,9 +277,8 @@
           </div>
         </div>
 
-        <!-- GRAFICO 2 & 3: ISTOGRAMMA DI DISTRIBUZIONE & DRAWDOWN -->
+        <!-- GRAFICO 2 & 3: ISTOGRAMMA & DRAWDOWN -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- Distribuzione Finale -->
           <div class="glass-panel p-5 rounded-2xl shadow-xl">
             <div class="mb-3">
               <h3 class="text-sm font-bold text-white flex items-center gap-2">
@@ -297,7 +292,6 @@
             </div>
           </div>
 
-          <!-- Distribuzione Max Drawdown -->
           <div class="glass-panel p-5 rounded-2xl shadow-xl flex flex-col justify-between">
             <div>
               <div class="mb-3">
@@ -375,22 +369,18 @@
       </div>
 
       <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
-        <p><strong>1. Moto Browniano con Salti di Merton (Jump Diffusion):</strong><br>
-        I mercati azionari non sono puramente gaussiani; mostrano asimmetria negativa e code grasse (fat tails). L'equazione stocastica per ogni sotto-intervallo $\Delta t$ è:<br>
+        <p><strong>1. Moto Browniano con Compensazione di Martingala per i Salti di Merton:</strong><br>
+        Per preservare il rendimento atteso &mu; inserito dall'utente evitando il drag artificiale dei crolli, il modello applica la compensazione di Merton al drift di diffusione ordinario:<br>
         <code class="block bg-dark-900 p-2 my-1 rounded border border-slate-800 font-mono text-accent-300">
-          S(t + &Delta;t) = S(t) &times; exp((&mu; - TER - 0.5&sigma;&sup2;)&Delta;t + &sigma;&radic;&Delta;t &times; Z) &times; (1 + J &times; N_jump)
+          drift_dt = (&mu; - TER - &lambda;&times;E[J] - 0.5&sigma;&sup2;) &times; &Delta;t
         </code>
-        dove $Z \sim \mathcal{N}(0, 1)$ è generata via Box-Muller, $N_{jump} \sim \text{Poisson}(\lambda \Delta t)$ e $J$ modella l'intensità del crollo improvviso.</p>
+        In questo modo, la presenza di crolli stocastici (&lambda; = frequenza/anno, J = intensità) modella l'asimmetria negativa e il rischio di coda (fat tails) senza abbattere arbitrariamente la crescita mediana di lungo periodo.</p>
 
         <p><strong>2. Metodologia di Confronto Fair PAC vs PIC:</strong><br>
-        Per eliminare distorsioni, il PIC parte esattamente con il <em>Capitale Totale Equivalente</em>: $S_{0,\text{PIC}} = S_0 + \sum \text{Versamenti PAC}$. In questo modo si misura l'effetto puro dell'esposizione immediata al rischio di mercato rispetto alla dilazione temporale.</p>
+        Il PIC parte al tempo t=0 con il <em>Capitale Totale Equivalente</em>: S<sub>0,PIC</sub> = S<sub>0</sub> + &sum; Versamenti PAC, neutralizzando i bias di scala.</p>
 
         <p><strong>3. Rendimento Annualizzato Omogeneo (MWRR / TIR vs CAGR):</strong><br>
-        Poiché il PAC presenta flussi multipli in entrata, il CAGR convenzionale è finanziariamente errato. Il simulatore implementa un solutore di bisezione numerica che risolve l'equazione di equivalenza del Tasso Interno di Rendimento (IRR):
-        $$V_{\text{finale}} = S_0 (1 + r)^T + \sum_{k=1}^N C_k (1 + r)^{T - t_k}$$</p>
-
-        <p><strong>4. Fiscalità Italiana & Potere d'Acquisto:</strong><br>
-        L'imposta del 26% viene applicata sull'effettiva plusvalenza nominale cumulata al termine del piano. Se attivata la modalità Reale, i valori finali e le soglie di acquisto vengono deflazionati di $(1 + \pi)^T$.</p>
+        Il PAC utilizza un algoritmo di bisezione numerica per individuare il Tasso Interno di Rendimento (IRR) che attualizza ogni singolo versamento in base al momento di ingresso sul mercato.</p>
       </div>
       <div class="text-right pt-2 border-t border-slate-800">
         <button id="closeInfoBtn2" class="px-4 py-2 rounded-xl bg-accent-500 text-dark-950 font-bold text-xs hover:bg-accent-400 transition">Chiudi</button>
@@ -451,7 +441,7 @@
     };
 
     let chartInstances = { fan: null, histogram: null, mdd: null };
-    let currentMode = 'gross'; // 'gross' | 'net'
+    let currentMode = 'gross';
     let lastResults = null;
 
     const formatCurrency = (val) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
@@ -464,7 +454,6 @@
       return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
     }
 
-    // Risolutore bisezione TIR / MWRR per flussi PAC periodici
     function calculatePAC_IRR(Vf, S0, recurring, freq, years) {
       const totalCash = S0 + recurring * freq * years;
       if (totalCash <= 0 || Vf <= 0) return -100.0;
@@ -499,16 +488,17 @@
       const totalDeposited = p.S0 + (p.recurring * totalSteps);
       const totalFeesPaid = p.fixedFee * (1 + totalSteps);
 
-      // Drift corretto per il TER dell'ETF
+      // Rendimento netto da TER
       const effMu = p.mu - p.ter;
-      const drift_dt = (effMu - 0.5 * p.sigma * p.sigma) * dt;
+      
+      // Compensazione Martingala di Merton per correggere il jump drag
+      const jumpIntensity = p.jumpMean / 100.0;
+      const jumpCompensator = p.enableJumps ? (p.jumpFreq * jumpIntensity) : 0;
+      const drift_dt = (effMu - jumpCompensator - 0.5 * p.sigma * p.sigma) * dt;
       const vol_dt = p.sigma * Math.sqrt(dt);
 
-      // Parametri Merton Jump
       const jumpProb = p.enableJumps ? (p.jumpFreq * dt) : 0;
-      const jumpIntensity = p.jumpMean / 100.0;
 
-      // Punti temporali per il Fan Chart
       const sampleIndices = [];
       for (let y = 0; y <= p.years; y++) sampleIndices.push(Math.min(y * p.freq, totalSteps));
       const numSamples = sampleIndices.length;
@@ -524,7 +514,6 @@
       let picWinsCount = 0;
 
       for (let sim = 0; sim < numSim; sim++) {
-        // Inizializzazione al tempo t=0
         let curPac = Math.max(0, p.S0 - p.fixedFee);
         let curPic = Math.max(0, totalDeposited - p.fixedFee);
 
@@ -541,14 +530,11 @@
         }
 
         for (let t = 1; t <= totalSteps; t++) {
-          // Versamento PAC all'inizio del periodo
           curPac += Math.max(0, p.recurring - p.fixedFee);
 
-          // Generazione Shock Browniano
           const z = generateStandardNormal();
           let shockFactor = Math.exp(drift_dt + vol_dt * z);
 
-          // Merton Poisson Jump
           if (p.enableJumps && Math.random() < jumpProb) {
             const jumpShock = 1.0 + (jumpIntensity + 0.05 * generateStandardNormal());
             shockFactor *= Math.max(0.05, jumpShock);
@@ -557,7 +543,6 @@
           curPac *= shockFactor;
           curPic *= shockFactor;
 
-          // Aggiornamento MDD
           if (curPac > peakPac) peakPac = curPac;
           else if (peakPac > 0) {
             const dd = (peakPac - curPac) / peakPac;
@@ -585,7 +570,6 @@
         if (curPic > curPac) picWinsCount++;
       }
 
-      // Funzione fiscale e inflattiva
       const inflationDiscount = Math.pow(1 + p.inflation, p.years);
       const toReal = (val) => p.showReal ? (val / inflationDiscount) : val;
 
@@ -612,7 +596,6 @@
 
       const getP = (arr, q) => arr[Math.min(arr.length - 1, Math.floor((q / 100) * arr.length))];
 
-      // Costruzione percentili temporali per il Fan Chart
       const fanData = { labels: sampleIndices.map(step => (step / p.freq).toFixed(0) + 'a') };
       ['gross', 'net'].forEach(mode => {
         fanData[mode] = {
@@ -740,7 +723,6 @@
         data: {
           labels: res.fanData.labels,
           datasets: [
-            // PIC Fans
             {
               label: 'PIC Limite Sup. (P90)',
               data: Array.from(d.picP90),
@@ -766,7 +748,6 @@
               pointRadius: 2,
               fill: false
             },
-            // PAC Fans
             {
               label: 'PAC Limite Sup. (P90)',
               data: Array.from(d.pacP90),
@@ -792,7 +773,6 @@
               pointRadius: 2,
               fill: false
             },
-            // Baseline Capitale Versato
             {
               label: 'Capitale Versato Base',
               data: Array.from(d.baseline),
