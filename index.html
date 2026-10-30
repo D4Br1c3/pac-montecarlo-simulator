@@ -315,7 +315,7 @@
                 <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 Distribuzione Valore Finale a Scadenza
               </h3>
-              <p class="text-xs text-slate-400">Densità di probabilità comparata a 15 anni</p>
+              <p class="text-xs text-slate-400">Densità di probabilità comparata a scadenza</p>
             </div>
             <div class="relative w-full h-64">
               <canvas id="histogramChart"></canvas>
@@ -338,11 +338,11 @@
 
             <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800 text-center text-xs">
               <div class="bg-dark-900/60 p-2 rounded-xl border border-slate-800">
-                <span class="text-slate-400 block text-[10px]">Peggior Drawdown Storico PAC</span>
+                <span class="text-slate-400 block text-[10px]">Peggior Scenario MC PAC (99.9° Perc.)</span>
                 <span id="worstPacMdd" class="font-mono font-bold text-emerald-400">-0.0%</span>
               </div>
               <div class="bg-dark-900/60 p-2 rounded-xl border border-slate-800">
-                <span class="text-slate-400 block text-[10px]">Peggior Drawdown Storico PIC</span>
+                <span class="text-slate-400 block text-[10px]">Peggior Scenario MC PIC (99.9° Perc.)</span>
                 <span id="worstPicMdd" class="font-mono font-bold text-rose-400">-0.0%</span>
               </div>
             </div>
@@ -360,7 +360,7 @@
               <p id="tableSubTitle" class="text-xs text-slate-400">Raffronto a parità di Valore Attuale (PV). Lordo, Netto e Imposta 26% (Art. 67 TUIR) perfettamente bilanciati.</p>
             </div>
             <button id="copyStatsBtn" class="text-xs flex items-center gap-1 text-slate-300 hover:text-white px-2.5 py-1.5 bg-dark-900 rounded-lg border border-slate-700 transition">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
               Copia Tabella
             </button>
           </div>
@@ -407,7 +407,7 @@
       <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
         <p><strong>1. Coni di Ibbotson a Stratificazione Multipla:</strong><br>
         Il simulatore stocastico campiona 10.000 cammini a ogni anno e traccia tre fasce concentriche:
-        la <em>fascia esterna</em> al 90% di confidenza (P10 - P90), il <em>cuore interquartilico</em> (P25 - P75) e la traiettoria mediana (P50), evidenziando l'asimmetria log-normale.</p>
+        la <em>fascia esterna</em> al 80% di confidenza (P10 - P90), il <em>cuore interquartilico</em> (P25 - P75) e la traiettoria mediana (P50), evidenziando l'asimmetria log-normale.</p>
 
         <p><strong>2. Attualizzazione dei Flussi Futuri (Valore Attuale - PV):</strong><br>
         Il capitale di partenza del PIC viene calcolato attualizzando la rendita dei versamenti periodici al tasso privo di rischio \(r_f\):<br>
@@ -1039,7 +1039,8 @@
 
     function renderMDDChart(res) {
       const ctx = UI.mddChartCanvas.getContext('2d');
-      const bins = 18;
+      // 25 bin da 4% coprono lo spettro da 0% a 100%
+      const bins = 25;
       const step = 4;
       const pacCounts = new Array(bins).fill(0);
       const picCounts = new Array(bins).fill(0);
@@ -1067,7 +1068,7 @@
           maintainAspectRatio: false,
           plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } },
           scales: {
-            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 8 } } },
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 8 }, maxRotation: 45 } },
             y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
           }
         }
@@ -1183,7 +1184,7 @@
       navigator.clipboard.writeText(text).then(() => {
         UI.copyStatsBtn.textContent = 'Copiato!';
         setTimeout(() => UI.copyStatsBtn.innerHTML = `
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copia Tabella`, 2000);
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copia Tabella`, 2000);
       });
     });
 
