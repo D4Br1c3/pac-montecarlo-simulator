@@ -1,0 +1,29 @@
+name: Financial model checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  financial-model:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          package-manager-cache: false
+      - name: Check JavaScript syntax
+        run: |
+          node --check engine.js
+          node --check app.js
+          node --check simulation-worker.js
+      - name: Check financial calculations
+        run: node --test tests/engine.test.cjs

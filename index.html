@@ -1,1208 +1,136 @@
 <!DOCTYPE html>
-<html lang="it" class="dark">
+<html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simulatore Quantitativo PAC vs PIC - Coni di Ibbotson & Monte Carlo</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  
-  <!-- Libreria Matematica KaTeX per rendering formule LaTeX -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            mono: ['"JetBrains Mono"', 'monospace'],
-          },
-          colors: {
-            brand: { 400: '#34d399', 500: '#10b981', 600: '#059669' },
-            accent: { 400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7' },
-            pic: { 400: '#fb923c', 500: '#f97316', 600: '#ea580c' },
-            dark: { 950: '#070b14', 900: '#0d1527', 850: '#131e36', 800: '#1e293b', 700: '#334155' }
-          }
-        }
-      }
-    }
-  </script>
-  <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #070b14; }
-    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #475569; }
-    .glass-panel {
-      background: rgba(19, 30, 54, 0.75);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      height: 16px;
-      width: 16px;
-      border-radius: 9999px;
-      background: #38bdf8;
-      cursor: pointer;
-      box-shadow: 0 0 10px #0ea5e9;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Confronta PAC e PIC a pari valore attuale: scenari Monte Carlo, VaR 95 e 99%, Expected Shortfall, Sharpe, costi e inflazione. Calcolo locale, senza installazioni.">
+  <meta name="theme-color" content="#0b1220">
+  <title>PAC vs PIC | Scenari, rendimento e rischio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%230b1220'/%3E%3Cpath d='M8 29l9-11 7 6 9-15' fill='none' stroke='%232dd4bf' stroke-width='4'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="vendor/chart.umd.min.js"></script>
+  <script defer src="engine.js"></script>
+  <script defer src="app.js"></script>
 </head>
-<body class="bg-dark-950 text-slate-100 font-sans min-h-screen flex flex-col selection:bg-brand-500/30 selection:text-brand-400">
-
-  <header class="border-b border-slate-800/80 bg-dark-900/80 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 via-accent-500 to-pic-500 flex items-center justify-center shadow-lg shadow-accent-500/20">
-          <svg class="w-6 h-6 text-dark-950" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-        </div>
-        <div>
-          <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
-            PAC <span class="text-slate-400 font-light">vs</span> PIC <span class="bg-gradient-to-r from-brand-400 via-accent-400 to-pic-400 bg-clip-text text-transparent">Monte Carlo Quant</span>
-          </h1>
-          <p class="text-xs text-slate-400 font-medium">Coni di Ibbotson a Stratificazione Tripla • PV Discounted • Fiscalità Integrale</p>
-        </div>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <button id="quickInfoBtn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-800 hover:bg-slate-700 text-xs text-slate-300 font-medium border border-slate-700 transition">
-          <svg class="w-4 h-4 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          Metodologia &amp; Formule KaTeX
-        </button>
-      </div>
-    </div>
+<body>
+  <a class="skip-link" href="#results">Vai ai risultati</a>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="PAC vs PIC, pagina iniziale">
+      <span class="brand-icon" aria-hidden="true">↗</span>
+      <span>PAC <span class="muted">vs</span> PIC <small>IL TEMPO, IL CAPITALE, IL RISCHIO</small></span>
+    </a>
+    <nav aria-label="Risorse"><button id="guideButton" class="button ghost">Come si legge</button><a class="repo-link" href="https://github.com/D4Br1c3/pac-montecarlo-simulator" target="_blank" rel="noopener noreferrer">Codice e guida ↗</a></nav>
   </header>
 
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      
-      <!-- CONTROLLI E PARAMETRI -->
-      <aside class="lg:col-span-4 xl:col-span-3.5 space-y-4">
-        <div class="glass-panel p-5 rounded-2xl shadow-xl space-y-4">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <h2 class="font-bold text-xs tracking-wider text-slate-300 uppercase flex items-center gap-2">
-              <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-              Parametri Piano
-            </h2>
-            <button id="resetDefaultsBtn" class="text-xs text-accent-400 hover:underline">Ripristina</button>
-          </div>
+  <main>
+    <section class="intro" aria-labelledby="introTitle">
+      <div><p class="eyebrow">LABORATORIO DI INVESTIMENTO</p><h1 id="introTitle">Un po' alla volta.<br>Oppure tutto subito.</h1>
+        <p class="intro-copy">Confronta un piano di accumulo con un investimento iniziale equivalente. Esplora le possibilità, poi guarda cosa succede nelle code.</p></div>
+      <div class="intro-note"><span class="status-dot"></span><strong>Le tue ipotesi, migliaia di scenari.</strong><p>Calcoli nel tuo browser. Nessun dato di mercato in tempo reale. I risultati descrivono il modello, non prevedono il futuro.</p></div>
+    </section>
 
-          <form id="simulatorForm" class="space-y-3.5">
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <label for="initialInvest" class="text-slate-300 font-medium">Capitale Iniziale PAC (€)</label>
-                <span id="initialInvestDisplay" class="font-mono text-accent-400 font-semibold">5.000 €</span>
-              </div>
-              <input type="number" id="initialInvest" min="0" max="1000000" step="500" value="5000"
-                class="w-full bg-dark-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm font-mono text-white focus:border-accent-400 focus:outline-none transition">
-            </div>
+    <aside class="educational-banner" aria-labelledby="warningTitle">
+      <h2 id="warningTitle">Simulazione didattica, non consulenza finanziaria.</h2>
+      <p>I risultati sono ipotetici, non previsioni o garanzie. Gli investimenti possono comportare la perdita anche totale del capitale. I rendimenti passati non sono garanzia di rendimenti futuri. <a href="#avvertenze">Leggi le avvertenze complete</a>.</p>
+    </aside>
 
-            <div>
-              <div class="flex justify-between text-xs mb-1">
-                <label for="recurringInvest" class="text-slate-300 font-medium">Versamento Ricorrente PAC (€)</label>
-                <span id="recurringInvestDisplay" class="font-mono text-brand-400 font-semibold">300 €</span>
-              </div>
-              <input type="number" id="recurringInvest" min="0" max="50000" step="25" value="300"
-                class="w-full bg-dark-900 border border-slate-700/80 rounded-xl px-3 py-1.5 text-sm font-mono text-white focus:border-brand-400 focus:outline-none transition">
-            </div>
+    <div class="workspace">
+      <aside class="panel controls" aria-label="Impostazioni della simulazione">
+        <div class="panel-heading"><h2>1. Costruisci il piano</h2><button id="resetButton" class="text-button" type="button">Ripristina</button></div>
+        <form id="simulatorForm" novalidate>
+          <div class="field"><label for="initial">Versamento iniziale PAC <span>€</span></label><input id="initial" name="initial" type="number" min="0" max="10000000" step="any" value="5000" required></div>
+          <div class="field"><label for="recurring">Rata del PAC <span>€ per rata</span></label><input id="recurring" name="recurring" type="number" min="0" max="100000" step="any" value="300" required></div>
+          <div class="field-pair"><div class="field"><label for="frequency">Frequenza</label><select id="frequency" name="frequency"><option value="12">Mensile</option><option value="4">Trimestrale</option><option value="24">Due volte al mese</option></select></div><div class="field"><label for="years">Durata <span>anni</span></label><input id="years" name="years" type="number" min="1" max="40" step="1" value="15" required></div></div>
+          <div class="field"><label for="timing">Quando versi la rata?</label><select id="timing" name="timing"><option value="end">A fine periodo</option><option value="start">A inizio periodo</option></select></div>
+          <div class="field"><label for="riskFree">Tasso privo di rischio (RF) <span>% annuo</span></label><input id="riskFree" name="riskFree" type="number" min="-10" max="30" step="any" value="2.5" required><p class="hint">Tasso annuo effettivo: serve per attualizzare le rate e calcolare lo Sharpe. Con RF = 0 il PIC coincide con la somma dei versamenti.</p></div>
+          <div class="equivalence"><span>Il PIC investe oggi</span><strong id="equivalentCapital">...</strong><small id="nominalContributions"></small><small>Stesso valore attuale, disponibilità del denaro in date diverse.</small></div>
 
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label for="frequency" class="block text-xs text-slate-300 font-medium mb-1">Frequenza</label>
-                <select id="frequency" class="w-full bg-dark-900 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none">
-                  <option value="12" selected>Mensile (12)</option>
-                  <option value="4">Trimestrale (4)</option>
-                  <option value="24">Quindicinale (24)</option>
-                </select>
-              </div>
-              <div>
-                <label for="horizonYears" class="block text-xs text-slate-300 font-medium mb-1">Orizzonte</label>
-                <div class="flex items-center gap-1.5">
-                  <input type="number" id="horizonYears" min="1" max="40" value="15" class="w-full bg-dark-900 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs font-mono text-white focus:outline-none">
-                  <span class="text-xs text-slate-400">anni</span>
-                </div>
-              </div>
-            </div>
+          <fieldset><legend>2. Le ipotesi sul mercato</legend>
+            <div class="field-pair"><div class="field"><label for="expectedReturn">Rendimento atteso <span>% annuo</span></label><input id="expectedReturn" name="expectedReturn" type="number" min="-50" max="50" step="any" value="6.25" required></div><div class="field"><label for="volatility">Volatilità di base <span>% annuo</span></label><input id="volatility" name="volatility" type="number" min="0" max="100" step="any" value="15" required></div></div>
+            <p class="hint">Rendimento e volatilità sono sempre modificabili. Le ipotesi iniziali danno uno Sharpe di 0,25 prima di costi e salti. Attivare i salti aggiunge rischio.</p>
+            <label class="check-label"><input id="jumps" name="jumps" type="checkbox" checked><span>Includi salti di mercato <small>Modello di Merton con salti lognormali</small></span></label>
+            <div id="jumpFields" class="field-pair"><div class="field"><label for="jumpFrequency">Salti medi <span>per anno</span></label><input id="jumpFrequency" name="jumpFrequency" type="number" min="0" max="2" step="any" value="0.2" required></div><div class="field"><label for="jumpMean">Salto medio <span>%</span></label><input id="jumpMean" name="jumpMean" type="number" min="-95" max="50" step="any" value="-18" required></div></div>
+            <p class="hint" id="jumpHint">Parametri dello scenario con salti, disponibili anche per il confronto quando il modulo è disattivato.</p>
+          </fieldset>
 
-            <!-- Attualizzazione PV Flussi Futuri -->
-            <div class="p-3 bg-dark-900/90 rounded-xl border border-slate-800 space-y-2">
-              <div class="flex items-center justify-between text-xs">
-                <label for="rfRate" class="text-slate-300 font-medium flex items-center gap-1">
-                  <span>Tasso Sconto PV (r<sub>f</sub> %)</span>
-                  <span class="text-[10px] text-accent-400" title="Tasso privo di rischio per attualizzare i flussi futuri">(Risk-Free)</span>
-                </label>
-                <span id="rfRateDisplay" class="font-mono text-accent-400 font-semibold">2.5%</span>
-              </div>
-              <input type="number" id="rfRate" min="0" max="15" step="0.1" value="2.5"
-                class="w-full bg-dark-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:border-accent-400 focus:outline-none">
-              
-              <div class="pt-1 border-t border-slate-800/80 space-y-1">
-                <div class="flex justify-between text-xs">
-                  <span class="text-slate-400">Capitale PV Scontato PIC:</span>
-                  <span id="picEquivalentCapital" class="font-mono font-bold text-pic-400">€ 0</span>
-                </div>
-                <div class="flex justify-between text-[10px] text-slate-500">
-                  <span>Totale Nominale Versamenti:</span>
-                  <span id="picNominalSum" class="font-mono">€ 0</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Parametri Asset (GBM) -->
-            <div class="pt-2 border-t border-slate-800 space-y-2.5">
-              <div class="flex justify-between text-xs">
-                <span class="font-bold uppercase tracking-wider text-slate-400">Asset Azionario</span>
-                <span class="text-accent-400 text-[11px]">Parametri Annuali</span>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label for="expectedReturn" class="block text-[11px] text-slate-300 mb-0.5">Rend. Atteso (&mu; %)</label>
-                  <input type="number" id="expectedReturn" min="-10" max="30" step="0.1" value="5.0"
-                    class="w-full bg-dark-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-white focus:border-brand-400 focus:outline-none">
-                </div>
-                <div>
-                  <label for="volatility" class="block text-[11px] text-slate-300 mb-0.5">Volatilità (&sigma; %)</label>
-                  <input type="number" id="volatility" min="1" max="50" step="0.1" value="15.0"
-                    class="w-full bg-dark-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-white focus:border-amber-400 focus:outline-none">
-                </div>
-              </div>
-            </div>
-
-            <!-- Moduli Avanzati -->
-            <div class="pt-2 border-t border-slate-800 space-y-3">
-              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Moduli Avanzati &amp; Frizioni</div>
-
-              <!-- Fat Tails / Jump Diffusion -->
-              <div class="bg-dark-900/60 p-2.5 rounded-xl border border-slate-800 space-y-2">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" id="enableJumps" class="rounded bg-dark-800 border-slate-700 text-brand-500 focus:ring-0" checked>
-                  <span class="text-xs font-semibold text-slate-200">Merton Jump Diffusion Corretto</span>
-                </label>
-                <div id="jumpParamsBox" class="grid grid-cols-2 gap-2 pt-1 text-[11px]">
-                  <div>
-                    <span class="text-slate-400 block">Freq. Salti (&lambda;/anno):</span>
-                    <input type="number" id="jumpFreq" min="0" max="2" step="0.05" value="0.20" class="w-full bg-dark-950 border border-slate-700 rounded px-2 py-1 text-xs font-mono text-white">
-                  </div>
-                  <div>
-                    <span class="text-slate-400 block">Intensità Media Salto:</span>
-                    <input type="number" id="jumpMean" min="-80" max="20" step="1" value="-18" class="w-full bg-dark-950 border border-slate-700 rounded px-2 py-1 text-xs font-mono text-rose-400">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Inflazione e Valore Reale -->
-              <div class="bg-dark-900/60 p-2.5 rounded-xl border border-slate-800 space-y-2">
-                <div class="flex items-center justify-between text-xs">
-                  <label for="inflationRate" class="text-slate-300 font-medium">Inflazione Annua Media</label>
-                  <span id="inflationDisplay" class="font-mono text-amber-300 font-semibold">2.0%</span>
-                </div>
-                <input type="range" id="inflationRate" min="0" max="10" step="0.2" value="2.0" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
-                <label class="flex items-center gap-2 cursor-pointer pt-1">
-                  <input type="checkbox" id="showRealTerms" class="rounded bg-dark-800 border-slate-700 text-brand-500 focus:ring-0">
-                  <span class="text-xs text-slate-300">Esprimi valori in Potere d'Acquisto Reale</span>
-                </label>
-              </div>
-
-              <!-- Costi: TER & Eseguito -->
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label for="terRate" class="block text-[11px] text-slate-300 mb-0.5">TER ETF (% / anno)</label>
-                  <input type="number" id="terRate" min="0" max="3" step="0.05" value="0.20"
-                    class="w-full bg-dark-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none">
-                </div>
-                <div>
-                  <label for="fixedFee" class="block text-[11px] text-slate-300 mb-0.5">Costo Eseguito (€)</label>
-                  <input type="number" id="fixedFee" min="0" max="50" step="0.5" value="1.00"
-                    class="w-full bg-dark-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none">
-                </div>
-              </div>
-            </div>
-
-            <button type="submit" id="simulateBtn"
-              class="w-full mt-3 py-3 px-4 rounded-xl bg-gradient-to-r from-brand-500 via-accent-500 to-pic-500 text-dark-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-accent-500/20 hover:opacity-95 active:scale-[0.98] transition flex items-center justify-center gap-2 group">
-              <svg id="calcIcon" class="w-4 h-4 transition-transform group-hover:rotate-180 duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-              <span id="btnText">Simula 10.000 Scenari</span>
-            </button>
-          </form>
-        </div>
+          <details class="advanced"><summary>Costi, imposte e precisione</summary>
+            <p class="cost-instrument">Costi di ETF / Fondo comune</p>
+            <div class="field-pair"><div class="field"><label for="ter">TER / costo annuo <span>% annuo</span></label><input id="ter" name="ter" type="number" min="0" max="10" step="any" value="0.2" required></div><div class="field"><label for="fee">Costo operazione <span>€ per ordine</span></label><input id="fee" name="fee" type="number" min="0" max="500" step="any" value="1" required></div></div>
+            <p class="hint">Usa il TER o i costi correnti dell'ETF / Fondo comune, senza sommare due volte gli stessi oneri. L'ipotesi di rendimento deve essere prima di questi costi.</p>
+            <p class="hint">Ogni importo versato include la commissione. Nessun ordine, nessuna commissione. Se due ordini coincidono all'inizio, le commissioni restano due.</p>
+            <div class="field-pair"><div class="field"><label for="taxRate">Imposta sui guadagni <span>%</span></label><input id="taxRate" name="taxRate" type="number" min="0" max="60" step="any" value="26" required></div><div class="field"><label for="inflation">Inflazione <span>% annuo</span></label><input id="inflation" name="inflation" type="number" min="-5" max="20" step="any" value="2" required></div></div>
+            <p class="hint">Imposta semplificata alla vendita finale sui guadagni nominali. Esclusi bollo, dividendi distribuiti, recupero delle minusvalenze, commissioni percentuali di ingresso/uscita e di performance.</p>
+            <div class="field"><label for="simulations">Numero di scenari</label><select id="simulations" name="simulations"><option value="10000">10.000 · rapido</option><option value="25000">25.000 · più preciso</option><option value="50000">50.000 · code più stabili</option></select></div>
+            <div class="field"><label for="seed">Campione ripetibile <span>seed</span></label><div class="input-action"><input id="seed" name="seed" type="number" min="0" max="4294967295" step="1" value="42" required><button id="newSeedButton" type="button" class="button secondary">Nuovo</button></div><p class="hint">Stesso numero e stesse ipotesi producono gli stessi risultati. Cambia campione per verificare quanto oscillano le stime.</p></div>
+          </details>
+          <p id="formError" class="error-message" role="alert" hidden></p>
+          <button id="simulateButton" class="button primary simulate" type="submit">Simula gli scenari <span aria-hidden="true">↗</span></button>
+          <button id="cancelButton" class="text-button cancel" type="button" hidden>Annulla calcolo</button>
+          <div class="progress" id="progressWrap" hidden><progress id="calculationProgress" max="1" value="0" aria-label="Avanzamento del calcolo"></progress></div>
+          <p id="calculationStatus" class="hint" role="status" aria-live="polite">Pronto al calcolo.</p>
+        </form>
       </aside>
 
-      <!-- DASHBOARD RISULTATI -->
-      <section class="lg:col-span-8 xl:col-span-8.5 space-y-6">
+      <section id="results" class="results" aria-label="Risultati della simulazione" aria-busy="true" tabindex="-1">
+        <div id="staleNotice" class="notice" role="status" hidden>Hai cambiato le ipotesi. Premi <strong>Simula gli scenari</strong> per aggiornare i risultati.</div>
+        <div class="result-bar"><div><p class="eyebrow">LA LETTURA DEI RISULTATI</p><h2>Rendimento e rischio, insieme.</h2><p id="resultStamp" class="hint">Preparazione del primo campione...</p></div><div class="view-options"><div class="segmented" role="group" aria-label="Valori prima o dopo le imposte"><button id="grossButton" type="button" aria-pressed="false">Lordi</button><button id="netButton" class="active" type="button" aria-pressed="true">Netti</button></div><label class="check-label compact"><input id="realTerms" type="checkbox"><span>Euro di oggi</span></label></div></div>
 
-        <!-- KPI SUMMARY CARDS: PAC vs PIC HEAD-TO-HEAD -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div class="glass-panel p-4 rounded-2xl border-l-4 border-slate-400">
-            <div class="text-[11px] text-slate-400 font-medium">Capitale Base (PV vs Nominale)</div>
-            <div id="statTotalCapital" class="text-lg font-bold font-mono text-white mt-1">€ 0</div>
-            <div id="statFeeDrag" class="text-[10px] text-rose-400 font-mono mt-0.5">Drag commissioni: € 0</div>
-          </div>
+        <div class="kpi-grid">
+          <article class="panel kpi pac"><span id="pacMedianLabel">Capitale finale mediano PAC</span><strong id="pacMedian">...</strong><small id="pacIrr">TIR annuo netto: ...</small></article>
+          <article class="panel kpi pic"><span id="picMedianLabel">Capitale finale mediano PIC</span><strong id="picMedian">...</strong><small id="picCagr">CAGR annuo netto: ...</small></article>
+          <article class="panel kpi"><span>Il PIC supera il PAC</span><strong id="winRate">...</strong><small id="otherWinRates">Confronto sugli stessi mercati simulati</small></article>
+          <article class="panel kpi sharpe"><span>Sharpe del modello attivo</span><strong id="modelSharpe">...</strong><small id="modelSharpeLabel">Dopo TER, prima di commissioni e imposte</small></article>
+        </div>
+        <div class="panel sharpe-comparison" aria-label="Confronto degli Sharpe impliciti">
+          <div><span>Sharpe delle ipotesi</span><strong id="inputSharpe">...</strong><small>Prima di costi e salti</small></div>
+          <div id="noJumpSharpeBox"><span>Modello senza salti</span><strong id="noJumpSharpe">...</strong><small>Dopo TER</small></div>
+          <div id="jumpSharpeBox"><span>Modello con salti</span><strong id="jumpSharpe">...</strong><small>Dopo TER</small></div>
+        </div>
+        <div class="assumption-strip"><p id="sharpeExplanation"></p><p id="comparisonExplanation"></p></div>
+        <p id="chartError" class="notice" role="status" hidden>I grafici non sono disponibili. Tabelle, statistiche e download restano utilizzabili.</p>
 
-          <div class="glass-panel p-4 rounded-2xl border-l-4 border-pic-400">
-            <div class="text-[11px] text-slate-400 font-medium">Head-to-Head: Win Rate PIC</div>
-            <div id="statPicWinRate" class="text-lg font-bold font-mono text-pic-400 mt-1">0.0%</div>
-            <div id="statPacWinRate" class="text-[10px] text-brand-400 font-mono mt-0.5">PAC vince: 0.0%</div>
-          </div>
+        <article class="panel chart-panel">
+          <div class="panel-heading"><div><p class="eyebrow">01 / IL PERCORSO</p><h3>Una strada, molte possibilità.</h3><p class="hint" id="fanSubtitle">Le fasce mostrano la dispersione dei capitali a ogni data.</p></div><label class="check-label compact"><input id="showTailLines" type="checkbox"><span>Mostra P1 e P5</span></label></div>
+          <div class="fan-chart"><canvas id="fanChart" role="img" aria-label="Distribuzione dei capitali nel tempo per PAC e PIC. Dati finali nella tabella dei percentili."></canvas></div>
+          <div class="chart-legend"><span><i class="swatch pac"></i>PAC</span><span><i class="swatch pic"></i>PIC</span><span><i class="swatch band strong"></i>Fascia centrale P25-P75</span><span><i class="swatch band"></i>Fascia esterna P10-P90</span><span><i class="swatch baseline"></i>Versamenti PAC</span></div>
+          <p class="chart-note">La linea piena è la mediana. P10-P90 contiene l'80% dei valori simulati a ciascuna data; P25-P75 il 50%. Le linee non rappresentano singoli percorsi e le fasce non sono garanzie.</p>
+        </article>
 
-          <div class="glass-panel p-4 rounded-2xl border-l-4 border-brand-400">
-            <div class="text-[11px] text-slate-400 font-medium">Mediana Netta (Q50)</div>
-            <div id="statPacMedianNet" class="text-lg font-bold font-mono text-brand-400 mt-1">PAC: € 0</div>
-            <div id="statPicMedianNet" class="text-[10px] text-pic-400 font-mono mt-0.5">PIC: € 0</div>
-          </div>
+        <article class="panel risk-panel">
+          <div class="panel-heading"><div><p class="eyebrow">02 / LE CODE</p><h3>Quanto può pesare uno scenario avverso?</h3></div><div class="field inline-field"><label for="riskReference">Misura la perdita rispetto a</label><select id="riskReference"><option value="capital">Capitale versato</option><option value="riskFree">Alternativa al tasso RF</option></select></div></div>
+          <p id="riskDescription" class="section-copy"></p>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="VaR ed Expected Shortfall, scorrimento orizzontale"><table class="risk-table"><caption class="sr-only">Misure di perdita a scadenza: VaR 95/99 ed Expected Shortfall per PAC e PIC</caption><thead><tr><th scope="col">Misura a scadenza</th><th scope="col" class="pac-text">PAC</th><th scope="col" class="pic-text">PIC</th><th scope="col">Come leggerla</th></tr></thead><tbody id="riskTableBody"></tbody></table></div>
+          <p id="tailSampleNote" class="chart-note"></p><p class="chart-note">VaR = soglia di perdita; Expected Shortfall (ES) = perdita media oltre quella soglia. Una perdita negativa indica un guadagno. Il VaR non è la perdita massima possibile.</p>
+        </article>
 
-          <div class="glass-panel p-4 rounded-2xl border-l-4 border-rose-500">
-            <div class="text-[11px] text-slate-400 font-medium">Max Drawdown Mediano</div>
-            <div id="statPacMdd" class="text-lg font-bold font-mono text-emerald-400 mt-1">PAC: -0.0%</div>
-            <div id="statPicMdd" class="text-[10px] text-rose-400 font-mono mt-0.5">PIC: -0.0%</div>
-          </div>
+        <div class="support-grid">
+          <article class="panel chart-panel"><p class="eyebrow">03 / A SCADENZA</p><h3>Dove si concentrano gli esiti?</h3><p class="hint" id="histogramSubtitle">Frequenze dei capitali finali.</p><div class="support-chart"><canvas id="histogramChart" role="img" aria-label="Istogramma dei capitali finali PAC e PIC."></canvas></div><p class="chart-note" id="histogramNote">L'ultimo intervallo include tutti i valori superiori alla soglia indicata.</p></article>
+          <article class="panel chart-panel"><div class="panel-heading"><div><p class="eyebrow">04 / DURANTE IL VIAGGIO</p><h3>Il calo dal massimo.</h3></div></div><div class="field"><label for="drawdownType">Quale drawdown?</label><select id="drawdownType"><option value="asset">Mercato, senza effetto dei versamenti</option><option value="balance">Saldo dei piani, con i versamenti</option></select></div><div class="support-chart"><canvas id="drawdownChart" role="img" aria-label="Distribuzione dei massimi drawdown osservati."></canvas></div><div id="drawdownSummary" class="drawdown-summary"></div><p id="drawdownNote" class="chart-note"></p></article>
         </div>
 
-        <!-- GRAFICO: CONI DI IBBOTSON COMPLETI (FASCIA ESTERNA 10-90 + FASCIA INTERQUARTILICA 25-75) -->
-        <div class="glass-panel p-5 rounded-2xl shadow-xl space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
-            <div>
-              <h2 class="text-base font-bold text-white flex items-center gap-2">
-                <svg class="w-5 h-5 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
-                Coni di Ibbotson: Dispersione 10°-90° e Cuore Interquartilico 25°-75°
-              </h2>
-              <p id="chartSubTitle" class="text-xs text-slate-400 mt-0.5">Doppia fascia graduata: code estese (10-90%) e cuore centrale (25-75%) con traiettoria mediana</p>
-            </div>
-            
-            <div class="flex items-center gap-2 text-xs">
-              <div class="flex items-center space-x-1 bg-dark-900 p-1 rounded-xl border border-slate-800">
-                <button id="viewGrossBtn" class="px-3 py-1 rounded-lg bg-accent-500/20 text-accent-300 font-semibold transition">Lordi</button>
-                <button id="viewNetBtn" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">Netti (26%)</button>
-              </div>
-            </div>
+        <article class="panel statistics-panel"><div class="panel-heading"><div><p class="eyebrow">05 / I NUMERI</p><h3>Dal percentile 1 al percentile 99.</h3><p id="tableSubtitle" class="hint">Confronta capitali, imposte e rendimenti annualizzati.</p></div><div class="export-actions"><button id="copyButton" class="button secondary" type="button">Copia tabella</button><button id="csvButton" class="button secondary" type="button">Scarica CSV</button></div></div>
+          <div class="table-scroll" tabindex="0" role="region" aria-label="Percentili dei capitali finali, scorrimento orizzontale"><table class="stats-table"><caption class="sr-only">Percentili dei capitali finali e rendimenti netti annualizzati</caption><thead><tr><th scope="col">Percentile</th><th scope="col">PAC lordo</th><th scope="col" class="pac-text">PAC netto</th><th scope="col">Imposta PAC</th><th scope="col" class="pac-text">TIR netto PAC</th><th scope="col">PIC lordo</th><th scope="col" class="pic-text">PIC netto</th><th scope="col">Imposta PIC</th><th scope="col" class="pic-text">CAGR netto PIC</th><th scope="col">Differenza tra percentili netti</th></tr></thead><tbody id="statsTableBody"></tbody></table></div>
+          <p class="chart-note">Il 5° percentile è il valore sotto cui cade il 5% degli esiti. La differenza tra i due percentili non è il percentile della differenza tra le strategie: i rispettivi scenari possono essere diversi.</p>
+          <p id="pairedDelta" class="chart-note"></p><p class="chart-note">Lordo e netto includono già TER e commissioni. Qui differiscono per l'imposta. I coni netti indicano la liquidazione ipotetica a ciascuna data; non applicano una vendita ogni anno.</p>
+        </article>
+        <details class="panel reading-guide" id="inlineGuide"><summary>Prima di trarre una conclusione</summary><div><p>Il confronto equipara il valore attuale dei versamenti. Se possiedi già tutta la somma, una decisione diversa consiste nel confrontare l'investimento immediato con un ingresso graduale e una riserva di liquidità remunerata: questo secondo caso non è simulato.</p><p>Le ipotesi non sono una stima aggiornata dell'MSCI World. Mancano, tra gli altri, volatilità variabile, correlazioni tra asset, rischio di cambio, bollo e redditi distribuiti. Anche 50.000 scenari non eliminano il rischio di un modello sbagliato.</p><p>Le statistiche sono condizionate alle ipotesi scelte e non costituiscono consulenza finanziaria. Per formule, fonti e verifiche consulta il <a href="https://github.com/D4Br1c3/pac-montecarlo-simulator/blob/main/docs/METODOLOGIA.md" target="_blank" rel="noopener noreferrer">documento di metodologia</a>.</p></div></details>
+        <details class="panel reading-guide legal-details" id="avvertenze">
+          <summary>Avvertenze, rischi e limiti d'uso</summary>
+          <div>
+            <p><strong>Finalità e assenza di consulenza.</strong> Questo strumento ha finalità esclusivamente informative, didattiche e di analisi matematica. Non fornisce consulenza finanziaria, legale o fiscale, raccomandazioni personalizzate di acquisto, vendita o detenzione, né un'offerta o sollecitazione all'investimento. Non valuta la situazione finanziaria, gli obiettivi, l'esperienza, la capacità di sostenere perdite o l'adeguatezza di prodotti per chi lo utilizza.</p>
+            <p><strong>Simulazioni ipotetiche.</strong> I risultati derivano da un modello e dai parametri inseriti, senza calibrazione a dati storici o quotazioni aggiornate. Non rappresentano risultati effettivi, scenari regolamentari di un KID, previsioni, rendimenti promessi o garanzie. Il valore dei parametri iniziali, compreso lo Sharpe, è un'ipotesi didattica modificabile e non una previsione o un dato universalmente valido per i mercati.</p>
+            <p><strong>Rischio di perdita.</strong> Il valore e il rendimento di un investimento possono aumentare o diminuire, con possibilità di perdita anche totale del capitale. I rendimenti passati non sono garanzia di rendimenti futuri. Un VaR, una mediana o una probabilità simulata non limitano le perdite reali; gli eventi possono essere più avversi di quelli rappresentati. Il tasso RF è un'assunzione del modello, non la garanzia di un rendimento effettivamente ottenibile.</p>
+            <p><strong>Costi, imposte e confronto.</strong> TER e costi correnti possono riguardare ETF o fondi comuni. I costi e le imposte sono semplificati: non vengono modellati tutti gli oneri, le regole dei singoli prodotti o la fiscalità personale. In particolare sono esclusi commissioni percentuali di ingresso/uscita e di performance, spread, bollo e recupero fiscale delle perdite. Non sono simulati prestiti né una riserva di liquidità remunerata per un capitale già disponibile.</p>
+            <p><strong>Uso dei risultati.</strong> Le simulazioni non sostituiscono una valutazione indipendente. Prima di investire è necessario comprendere i rischi e leggere il KID, il prospetto e le condizioni del prodotto, ove applicabili; per esigenze personali occorre rivolgersi a professionisti abilitati. Errori di software, ipotesi inadeguate o condizioni non considerate possono alterare gli esiti: verifica autonomamente i risultati rilevanti per le tue decisioni.</p>
+            <p><strong>Dati e funzionamento.</strong> I parametri vengono elaborati nel browser; questo simulatore non invia i valori inseriti a un proprio servizio di calcolo e non include strumenti di analisi o tracciamento. I servizi che ospitano il sito o che apri tramite collegamenti esterni possono trattare dati tecnici secondo le rispettive informative. <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">Informativa del servizio di hosting GitHub</a>.</p>
           </div>
-
-          <div class="relative w-full h-80 sm:h-96">
-            <canvas id="fanChart"></canvas>
-          </div>
-
-          <!-- LEGENDA COMPLETA CON FASCE DISTINTE -->
-          <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-xs text-slate-400">
-            <!-- PIC -->
-            <div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-pic-400 rounded"></span><span class="text-slate-200 font-medium">PIC Mediana</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-pic-500/25 border border-pic-500/60 rounded"></span><span>PIC Quartili (25-75%)</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-pic-500/10 border border-pic-500/30 rounded"></span><span>PIC Coda Estesa (10-90%)</span></div>
-            
-            <!-- PAC -->
-            <div class="flex items-center gap-1.5"><span class="w-3 h-1 bg-brand-400 rounded"></span><span class="text-slate-200 font-medium">PAC Mediana</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-brand-500/25 border border-brand-500/60 rounded"></span><span>PAC Quartili (25-75%)</span></div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 bg-brand-500/10 border border-brand-500/30 rounded"></span><span>PAC Coda Estesa (10-90%)</span></div>
-            
-            <!-- Baseline -->
-            <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-slate-400"></span><span>PAC Capitale Versato</span></div>
-          </div>
-        </div>
-
-        <!-- GRAFICI DI SUPPORTO: ISTOGRAMMA & DRAWDOWN -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="glass-panel p-5 rounded-2xl shadow-xl">
-            <div class="mb-3">
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                Distribuzione Valore Finale a Scadenza
-              </h3>
-              <p class="text-xs text-slate-400">Densità di probabilità comparata a scadenza</p>
-            </div>
-            <div class="relative w-full h-64">
-              <canvas id="histogramChart"></canvas>
-            </div>
-          </div>
-
-          <div class="glass-panel p-5 rounded-2xl shadow-xl flex flex-col justify-between">
-            <div>
-              <div class="mb-3">
-                <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                  <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
-                  Stress Test: Max Drawdown Subito
-                </h3>
-                <p class="text-xs text-slate-400">Distribuzione del peggior crollo percentuale lungo la durata</p>
-              </div>
-              <div class="relative w-full h-48">
-                <canvas id="mddChart"></canvas>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800 text-center text-xs">
-              <div class="bg-dark-900/60 p-2 rounded-xl border border-slate-800">
-                <span class="text-slate-400 block text-[10px]">Peggior Scenario MC PAC (99.9° Perc.)</span>
-                <span id="worstPacMdd" class="font-mono font-bold text-emerald-400">-0.0%</span>
-              </div>
-              <div class="bg-dark-900/60 p-2 rounded-xl border border-slate-800">
-                <span class="text-slate-400 block text-[10px]">Peggior Scenario MC PIC (99.9° Perc.)</span>
-                <span id="worstPicMdd" class="font-mono font-bold text-rose-400">-0.0%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- TABELLA QUANTITATIVA: QUADRATURA FISCALE COMPLETA -->
-        <div class="glass-panel p-5 rounded-2xl shadow-xl overflow-hidden">
-          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-800">
-            <div>
-              <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                <svg class="w-4 h-4 text-accent-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                Matrice Statistica: Percentili, TIR Annualizzato &amp; Fiscalità Integrale
-              </h3>
-              <p id="tableSubTitle" class="text-xs text-slate-400">Raffronto a parità di Valore Attuale (PV). Lordo, Netto e Imposta 26% (Art. 67 TUIR) perfettamente bilanciati.</p>
-            </div>
-            <button id="copyStatsBtn" class="text-xs flex items-center gap-1 text-slate-300 hover:text-white px-2.5 py-1.5 bg-dark-900 rounded-lg border border-slate-700 transition">
-              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-              Copia Tabella
-            </button>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
-              <thead>
-                <tr class="text-slate-400 border-b border-slate-800 bg-dark-900/50">
-                  <th class="py-2.5 px-3 font-semibold">Percentile / Scenario</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-slate-400">PAC Lordo</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-brand-300">PAC Netto</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-brand-400">PAC TIR</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-rose-400/90">Tax PAC 26%</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-slate-400">PIC Lordo</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-pic-300">PIC Netto</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-pic-400">PIC CAGR</th>
-                  <th class="py-2.5 px-2.5 font-semibold font-mono text-right text-rose-400/90">Tax PIC 26%</th>
-                  <th class="py-2.5 px-3 font-semibold font-mono text-right text-slate-200">Delta Netto</th>
-                </tr>
-              </thead>
-              <tbody id="statsTableBody" class="divide-y divide-slate-800/60 font-mono">
-              </tbody>
-            </table>
-          </div>
-          <div class="mt-3 text-[11px] text-slate-500 italic">
-            * Nota: L'imposta sostitutiva italiana (26%) grava sulla plusvalenza nominale realizzata (Art. 67 TUIR). In modalità Potere d'Acquisto Reale, tutte le colonne (Lordo, Netto, Imposta) sono convertite a valori costanti dell'anno 0, preservando rigorosamente l'identità contabile: Lordo - Imposta = Netto.
-          </div>
-        </div>
-
+        </details>
       </section>
     </div>
   </main>
+  <footer><span>PAC vs PIC · Laboratorio Monte Carlo</span><span>Solo simulazioni didattiche. <a href="#avvertenze">Non è consulenza finanziaria</a>.</span></footer>
 
-  <!-- MODAL SPIEGAZIONI ARCHITETTURA CON FORMULE KATEX -->
-  <div id="infoModal" class="fixed inset-0 bg-dark-950/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-panel max-w-2xl w-full rounded-2xl p-6 border border-slate-700 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-bold text-base text-white">Architettura Quantitativa &amp; Formule di Calcolo</h3>
-        <button id="closeInfoBtn" class="text-slate-400 hover:text-white p-1 rounded-lg">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-        </button>
-      </div>
-
-      <div class="text-xs text-slate-300 space-y-3 leading-relaxed">
-        <p><strong>1. Coni di Ibbotson a Stratificazione Multipla:</strong><br>
-        Il simulatore stocastico campiona 10.000 cammini a ogni anno e traccia tre fasce concentriche:
-        la <em>fascia esterna</em> al 80% di confidenza (P10 - P90), il <em>cuore interquartilico</em> (P25 - P75) e la traiettoria mediana (P50), evidenziando l'asimmetria log-normale.</p>
-
-        <p><strong>2. Attualizzazione dei Flussi Futuri (Valore Attuale - PV):</strong><br>
-        Il capitale di partenza del PIC viene calcolato attualizzando la rendita dei versamenti periodici al tasso privo di rischio \(r_f\):<br>
-        <div class="p-2 bg-dark-900 rounded border border-slate-800 text-center font-mono text-pic-300">
-          $$PV = S_0 + \sum_{k=1}^N \frac{C}{\left(1 + \frac{r_f}{m}\right)^k}$$
-        </div>
-        Se \(r_f = 0\%\), il PIC coincide con la somma nominale totale. Se \(r_f > 0\%\), il capitale iniziale del PIC è scontato finanziariamente al tempo zero.</p>
-
-        <p><strong>3. Merton Jump Diffusion con Compensazione di Martingala:</strong><br>
-        I crolli casuali sono simulati con un processo di Poisson di intensità media negativa. La compensazione sul drift garantisce che la media attesa rimanga ancorata a \(\mu\):<br>
-        <div class="p-2 bg-dark-900 rounded border border-slate-800 text-center font-mono text-accent-300">
-          $$\text{drift} = \left(\mu - \text{TER} - \lambda \mathbb{E}[J] - \frac{1}{2}\sigma^2\right) \Delta t$$
-        </div>
-        </p>
-
-        <p><strong>4. Fiscalità Italiana e Relazione di Fisher:</strong><br>
-        L'imposta del 26% grava sulla plusvalenza nominale realizzata. In modalità reale, i tassi annualizzati vengono convertiti tramite l'equazione di Fisher: \((1 + r_{\text{reale}}) = \frac{1 + r_{\text{nominale}}}{1 + \pi}\).</p>
-      </div>
-      <div class="text-right pt-2 border-t border-slate-800">
-        <button id="closeInfoBtn2" class="px-4 py-2 rounded-xl bg-accent-500 text-dark-950 font-bold text-xs hover:bg-accent-400 transition">Chiudi</button>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const UI = {
-      initialInvest: document.getElementById('initialInvest'),
-      recurringInvest: document.getElementById('recurringInvest'),
-      frequency: document.getElementById('frequency'),
-      horizonYears: document.getElementById('horizonYears'),
-      rfRate: document.getElementById('rfRate'),
-      rfRateDisplay: document.getElementById('rfRateDisplay'),
-      picEquivalentCapital: document.getElementById('picEquivalentCapital'),
-      picNominalSum: document.getElementById('picNominalSum'),
-      expectedReturn: document.getElementById('expectedReturn'),
-      volatility: document.getElementById('volatility'),
-      enableJumps: document.getElementById('enableJumps'),
-      jumpParamsBox: document.getElementById('jumpParamsBox'),
-      jumpFreq: document.getElementById('jumpFreq'),
-      jumpMean: document.getElementById('jumpMean'),
-      inflationRate: document.getElementById('inflationRate'),
-      inflationDisplay: document.getElementById('inflationDisplay'),
-      showRealTerms: document.getElementById('showRealTerms'),
-      terRate: document.getElementById('terRate'),
-      fixedFee: document.getElementById('fixedFee'),
-
-      initialInvestDisplay: document.getElementById('initialInvestDisplay'),
-      recurringInvestDisplay: document.getElementById('recurringInvestDisplay'),
-
-      form: document.getElementById('simulatorForm'),
-      simulateBtn: document.getElementById('simulateBtn'),
-      btnText: document.getElementById('btnText'),
-      calcIcon: document.getElementById('calcIcon'),
-      resetDefaultsBtn: document.getElementById('resetDefaultsBtn'),
-      quickInfoBtn: document.getElementById('quickInfoBtn'),
-      closeInfoBtn: document.getElementById('closeInfoBtn'),
-      closeInfoBtn2: document.getElementById('closeInfoBtn2'),
-      infoModal: document.getElementById('infoModal'),
-      viewGrossBtn: document.getElementById('viewGrossBtn'),
-      viewNetBtn: document.getElementById('viewNetBtn'),
-      copyStatsBtn: document.getElementById('copyStatsBtn'),
-      chartSubTitle: document.getElementById('chartSubTitle'),
-      tableSubTitle: document.getElementById('tableSubTitle'),
-
-      statTotalCapital: document.getElementById('statTotalCapital'),
-      statFeeDrag: document.getElementById('statFeeDrag'),
-      statPicWinRate: document.getElementById('statPicWinRate'),
-      statPacWinRate: document.getElementById('statPacWinRate'),
-      statPacMedianNet: document.getElementById('statPacMedianNet'),
-      statPicMedianNet: document.getElementById('statPicMedianNet'),
-      statPacMdd: document.getElementById('statPacMdd'),
-      statPicMdd: document.getElementById('statPicMdd'),
-      worstPacMdd: document.getElementById('worstPacMdd'),
-      worstPicMdd: document.getElementById('worstPicMdd'),
-
-      statsTableBody: document.getElementById('statsTableBody'),
-      fanChartCanvas: document.getElementById('fanChart'),
-      histogramChartCanvas: document.getElementById('histogramChart'),
-      mddChartCanvas: document.getElementById('mddChart')
-    };
-
-    let chartInstances = { fan: null, histogram: null, mdd: null };
-    let currentMode = 'gross';
-    let lastResults = null;
-
-    const formatCurrency = (val) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
-    const formatPercent = (val, dec = 1) => `${val >= 0 ? '+' : ''}${val.toFixed(dec)}%`;
-
-    function generateStandardNormal() {
-      let u = 0, v = 0;
-      while (u === 0) u = Math.random();
-      while (v === 0) v = Math.random();
-      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-    }
-
-    function calculatePV(S0, recurring, freq, years, rf) {
-      const N = freq * years;
-      if (rf <= 0) return S0 + recurring * N;
-      const rp = rf / freq;
-      const annuityPV = recurring * (1 - Math.pow(1 + rp, -N)) / rp;
-      return S0 + annuityPV;
-    }
-
-    function calculatePAC_IRR(Vf, S0, recurring, freq, years) {
-      const totalCash = S0 + recurring * freq * years;
-      if (totalCash <= 0 || Vf <= 0) return -100.0;
-      if (Math.abs(Vf - totalCash) < 1) return 0.0;
-      const N = freq * years;
-
-      const evalFV = (rp) => {
-        if (Math.abs(rp) < 1e-8) return S0 + recurring * N;
-        const growth = Math.pow(1 + rp, N);
-        return S0 * growth + recurring * (1 + rp) * (growth - 1) / rp;
-      };
-
-      let low = -0.999 / freq;
-      let high = 2.0 / freq;
-      while (evalFV(high) < Vf && high < 20) high *= 2;
-
-      for (let i = 0; i < 45; i++) {
-        const mid = (low + high) / 2;
-        const diff = evalFV(mid) - Vf;
-        if (Math.abs(diff) < 0.1 || (high - low) < 1e-7) {
-          return (Math.pow(1 + mid, freq) - 1) * 100;
-        }
-        if (diff > 0) high = mid; else low = mid;
-      }
-      return (Math.pow(1 + (low + high) / 2, freq) - 1) * 100;
-    }
-
-    function runSimulationEngine(p) {
-      const numSim = 10000;
-      const totalSteps = p.years * p.freq;
-      const dt = 1.0 / p.freq;
-      const totalDeposited = p.S0 + (p.recurring * totalSteps);
-      const totalFeesPaid = p.fixedFee * (1 + totalSteps);
-
-      const pvPic = calculatePV(p.S0, p.recurring, p.freq, p.years, p.rf);
-
-      const effMu = p.mu - p.ter;
-      const jumpIntensity = p.jumpMean / 100.0;
-      const jumpCompensator = p.enableJumps ? (p.jumpFreq * jumpIntensity) : 0;
-      const drift_dt = (effMu - jumpCompensator - 0.5 * p.sigma * p.sigma) * dt;
-      const vol_dt = p.sigma * Math.sqrt(dt);
-
-      const jumpProb = p.enableJumps ? (p.jumpFreq * dt) : 0;
-
-      const sampleIndices = [];
-      for (let y = 0; y <= p.years; y++) sampleIndices.push(Math.min(y * p.freq, totalSteps));
-      const numSamples = sampleIndices.length;
-
-      const pacTrajectories = Array.from({ length: numSamples }, () => new Float32Array(numSim));
-      const picTrajectories = Array.from({ length: numSamples }, () => new Float32Array(numSim));
-
-      const finalPacGross = new Float32Array(numSim);
-      const finalPicGross = new Float32Array(numSim);
-      const pacMaxDD = new Float32Array(numSim);
-      const picMaxDD = new Float32Array(numSim);
-
-      let picWinsGrossCount = 0;
-      let picWinsNetCount = 0;
-
-      for (let sim = 0; sim < numSim; sim++) {
-        let curPac = Math.max(0, p.S0 - p.fixedFee);
-        let curPic = Math.max(0, pvPic - p.fixedFee);
-
-        let peakPac = curPac;
-        let peakPic = curPic;
-        let mddPac = 0.0;
-        let mddPic = 0.0;
-
-        let nextSample = 0;
-        if (sampleIndices[0] === 0) {
-          pacTrajectories[0][sim] = curPac;
-          picTrajectories[0][sim] = curPic;
-          nextSample = 1;
-        }
-
-        for (let t = 1; t <= totalSteps; t++) {
-          curPac += Math.max(0, p.recurring - p.fixedFee);
-
-          const z = generateStandardNormal();
-          let shockFactor = Math.exp(drift_dt + vol_dt * z);
-
-          if (p.enableJumps && Math.random() < jumpProb) {
-            const jumpShock = 1.0 + (jumpIntensity + 0.05 * generateStandardNormal());
-            shockFactor *= Math.max(0.05, jumpShock);
-          }
-
-          curPac *= shockFactor;
-          curPic *= shockFactor;
-
-          if (curPac > peakPac) peakPac = curPac;
-          else if (peakPac > 0) {
-            const dd = (peakPac - curPac) / peakPac;
-            if (dd > mddPac) mddPac = dd;
-          }
-
-          if (curPic > peakPic) peakPic = curPic;
-          else if (peakPic > 0) {
-            const dd = (peakPic - curPic) / peakPic;
-            if (dd > mddPic) mddPic = dd;
-          }
-
-          if (nextSample < numSamples && t === sampleIndices[nextSample]) {
-            pacTrajectories[nextSample][sim] = curPac;
-            picTrajectories[nextSample][sim] = curPic;
-            nextSample++;
-          }
-        }
-
-        finalPacGross[sim] = curPac;
-        finalPicGross[sim] = curPic;
-        pacMaxDD[sim] = mddPac;
-        picMaxDD[sim] = mddPic;
-
-        if (curPic > curPac) picWinsGrossCount++;
-
-        const netPicSim = curPic - Math.max(0, (curPic - pvPic) * 0.26);
-        const netPacSim = curPac - Math.max(0, (curPac - totalDeposited) * 0.26);
-        if (netPicSim > netPacSim) picWinsNetCount++;
-      }
-
-      const inflationDiscount = Math.pow(1 + p.inflation, p.years);
-      const toReal = (val) => p.showReal ? (val / inflationDiscount) : val;
-
-      const calcNetPac = (grossVal) => {
-        const gain = grossVal - totalDeposited;
-        const tax = gain > 0 ? (gain * 0.26) : 0;
-        return toReal(grossVal - tax);
-      };
-
-      const calcNetPic = (grossVal) => {
-        const gain = grossVal - pvPic;
-        const tax = gain > 0 ? (gain * 0.26) : 0;
-        return toReal(grossVal - tax);
-      };
-
-      const finalPacNet = new Float32Array(numSim);
-      const finalPicNet = new Float32Array(numSim);
-      for (let i = 0; i < numSim; i++) {
-        finalPacNet[i] = calcNetPac(finalPacGross[i]);
-        finalPicNet[i] = calcNetPic(finalPicGross[i]);
-      }
-
-      const sortF32 = (arr) => Float32Array.from(arr).sort();
-      const sPacGross = sortF32(finalPacGross);
-      const sPacNet = sortF32(finalPacNet);
-      const sPicGross = sortF32(finalPicGross);
-      const sPicNet = sortF32(finalPicNet);
-      const sPacDD = sortF32(pacMaxDD);
-      const sPicDD = sortF32(picMaxDD);
-
-      const getP = (arr, q) => arr[Math.min(arr.length - 1, Math.floor((q / 100) * arr.length))];
-
-      // Costruzione traiettorie temporali con P10, P25, P50, P75, P90
-      const fanData = { labels: sampleIndices.map(step => (step / p.freq).toFixed(0) + 'a') };
-      ['gross', 'net'].forEach(mode => {
-        fanData[mode] = {
-          pacP10: new Float32Array(numSamples),
-          pacP25: new Float32Array(numSamples),
-          pacP50: new Float32Array(numSamples),
-          pacP75: new Float32Array(numSamples),
-          pacP90: new Float32Array(numSamples),
-
-          picP10: new Float32Array(numSamples),
-          picP25: new Float32Array(numSamples),
-          picP50: new Float32Array(numSamples),
-          picP75: new Float32Array(numSamples),
-          picP90: new Float32Array(numSamples),
-
-          baselinePac: new Float32Array(numSamples)
-        };
-
-        for (let s = 0; s < numSamples; s++) {
-          const step = sampleIndices[s];
-          const investedAtT = p.S0 + (p.recurring * step);
-          const tYears = step / p.freq;
-          const inflAtT = Math.pow(1 + p.inflation, tYears);
-
-          const transformPac = (v) => {
-            if (mode === 'gross') return p.showReal ? (v / inflAtT) : v;
-            const gain = v - investedAtT;
-            const net = gain > 0 ? (v - gain * 0.26) : v;
-            return p.showReal ? (net / inflAtT) : net;
-          };
-
-          const transformPic = (v) => {
-            if (mode === 'gross') return p.showReal ? (v / inflAtT) : v;
-            const gain = v - pvPic;
-            const net = gain > 0 ? (v - gain * 0.26) : v;
-            return p.showReal ? (net / inflAtT) : net;
-          };
-
-          const pacCol = Array.from(pacTrajectories[s]).map(transformPac).sort((a,b)=>a-b);
-          const picCol = Array.from(picTrajectories[s]).map(transformPic).sort((a,b)=>a-b);
-
-          fanData[mode].pacP10[s] = pacCol[Math.floor(0.10 * numSim)];
-          fanData[mode].pacP25[s] = pacCol[Math.floor(0.25 * numSim)];
-          fanData[mode].pacP50[s] = pacCol[Math.floor(0.50 * numSim)];
-          fanData[mode].pacP75[s] = pacCol[Math.floor(0.75 * numSim)];
-          fanData[mode].pacP90[s] = pacCol[Math.floor(0.90 * numSim)];
-
-          fanData[mode].picP10[s] = picCol[Math.floor(0.10 * numSim)];
-          fanData[mode].picP25[s] = picCol[Math.floor(0.25 * numSim)];
-          fanData[mode].picP50[s] = picCol[Math.floor(0.50 * numSim)];
-          fanData[mode].picP75[s] = picCol[Math.floor(0.75 * numSim)];
-          fanData[mode].picP90[s] = picCol[Math.floor(0.90 * numSim)];
-
-          fanData[mode].baselinePac[s] = p.showReal ? (investedAtT / inflAtT) : investedAtT;
-        }
-      });
-
-      return {
-        params: p,
-        totalDeposited,
-        pvPic,
-        totalFeesPaid,
-        picWinRateGross: (picWinsGrossCount / numSim) * 100,
-        picWinRateNet: (picWinsNetCount / numSim) * 100,
-        sPacGross, sPacNet, sPicGross, sPicNet,
-        sPacDD, sPicDD,
-        fanData,
-        getP
-      };
-    }
-
-    function updateDashboard(res) {
-      lastResults = res;
-      const p = res.params;
-      const inflFactor = p.showReal ? Math.pow(1 + p.inflation, p.years) : 1.0;
-
-      UI.statTotalCapital.textContent = `PV: ${formatCurrency(res.pvPic / inflFactor)}`;
-      UI.statFeeDrag.textContent = `Nominale: ${formatCurrency(res.totalDeposited / inflFactor)} | r_f: ${(p.rf*100).toFixed(1)}%`;
-
-      const activePicWinRate = currentMode === 'gross' ? res.picWinRateGross : res.picWinRateNet;
-      UI.statPicWinRate.textContent = `${activePicWinRate.toFixed(1)}%`;
-      UI.statPacWinRate.textContent = `PAC vince nel: ${(100 - activePicWinRate).toFixed(1)}% (${currentMode === 'gross' ? 'Lordo' : 'Netto'})`;
-
-      const pacMedNet = res.getP(res.sPacNet, 50);
-      const picMedNet = res.getP(res.sPicNet, 50);
-      UI.statPacMedianNet.textContent = `PAC: ${formatCurrency(pacMedNet)}`;
-      UI.statPicMedianNet.textContent = `PIC: ${formatCurrency(picMedNet)}`;
-
-      const pacMddMed = res.getP(res.sPacDD, 50) * 100;
-      const picMddMed = res.getP(res.sPicDD, 50) * 100;
-      UI.statPacMdd.textContent = `PAC: -${pacMddMed.toFixed(1)}%`;
-      UI.statPicMdd.textContent = `PIC: -${picMddMed.toFixed(1)}%`;
-
-      UI.worstPacMdd.textContent = `-${(res.getP(res.sPacDD, 99.9) * 100).toFixed(1)}%`;
-      UI.worstPicMdd.textContent = `-${(res.getP(res.sPicDD, 99.9) * 100).toFixed(1)}%`;
-
-      if (p.showReal) {
-        UI.chartSubTitle.textContent = `Coni di Ibbotson (P10-P90 & Quartili P25-P75) in Potere d'Acquisto Reale deflazionato (Inflazione: ${(p.inflation*100).toFixed(1)}%)`;
-        UI.tableSubTitle.textContent = `Valori deflazionati all'anno 0. Si rispetta rigorosamente: Lordo - Imposta = Netto.`;
-      } else {
-        UI.chartSubTitle.textContent = `Coni di Ibbotson completi: Fascia Esterna 10°-90° e Cuore Interquartilico 25°-75° (Nominali)`;
-        UI.tableSubTitle.textContent = `Valori nominali a scadenza. Imposta 26% (Art. 67 TUIR) calcolata su plusvalenza realizzata.`;
-      }
-
-      renderStatsTable(res);
-      renderFanChart(res);
-      renderHistogram(res);
-      renderMDDChart(res);
-
-      if (window.renderMathInElement) {
-        renderMathInElement(document.getElementById('infoModal'));
-      }
-    }
-
-    function renderStatsTable(res) {
-      const p = res.params;
-      const inflFactor = p.showReal ? Math.pow(1 + p.inflation, p.years) : 1.0;
-
-      const quantiles = [
-        { label: 'P10 (Scenario molto sfavorevole)', q: 10, isBand: 'P10-P90' },
-        { label: 'P25 (Primo Quartile - Q1)', q: 25, isBand: 'P25-P75' },
-        { label: 'P50 (Mediana - Q2)', q: 50, hl: true },
-        { label: 'P75 (Terzo Quartile - Q3)', q: 75, isBand: 'P25-P75' },
-        { label: 'P90 (Scenario favorevole)', q: 90, isBand: 'P10-P90' },
-      ];
-
-      let html = '';
-      quantiles.forEach(item => {
-        const pacGrossNom = res.getP(res.sPacGross, item.q);
-        const picGrossNom = res.getP(res.sPicGross, item.q);
-
-        const pacGainNom = Math.max(0, pacGrossNom - res.totalDeposited);
-        const picGainNom = Math.max(0, picGrossNom - res.pvPic);
-        const pacTaxNom = pacGainNom * 0.26;
-        const picTaxNom = picGainNom * 0.26;
-
-        const pacNetNom = pacGrossNom - pacTaxNom;
-        const picNetNom = picGrossNom - picTaxNom;
-
-        const pacGrossDisp = pacGrossNom / inflFactor;
-        const pacNetDisp = pacNetNom / inflFactor;
-        const pacTaxDisp = pacTaxNom / inflFactor;
-
-        const picGrossDisp = picGrossNom / inflFactor;
-        const picNetDisp = picNetNom / inflFactor;
-        const picTaxDisp = picTaxNom / inflFactor;
-
-        const pacTirNom = calculatePAC_IRR(pacNetNom, p.S0, p.recurring, p.freq, p.years);
-        const picCagrNom = (Math.pow(picNetNom / res.pvPic, 1 / p.years) - 1) * 100;
-
-        const pacTirDisp = p.showReal ? (((1 + pacTirNom / 100) / (1 + p.inflation) - 1) * 100) : pacTirNom;
-        const picCagrDisp = p.showReal ? (((1 + picCagrNom / 100) / (1 + p.inflation) - 1) * 100) : picCagrNom;
-
-        const deltaNet = picNetDisp - pacNetDisp;
-
-        const rowBg = item.hl 
-          ? 'bg-brand-500/10 font-bold text-white border-l-2 border-brand-400' 
-          : 'hover:bg-dark-900/60 text-slate-300';
-
-        html += `
-          <tr class="${rowBg} transition">
-            <td class="py-2.5 px-3 flex items-center gap-1.5">
-              <span>${item.label}</span>
-              ${item.isBand ? `<span class="text-[9px] uppercase px-1 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700">${item.isBand}</span>` : ''}
-            </td>
-            <td class="py-2.5 px-2.5 text-right text-slate-400">${formatCurrency(pacGrossDisp)}</td>
-            <td class="py-2.5 px-2.5 text-right text-brand-300 font-semibold">${formatCurrency(pacNetDisp)}</td>
-            <td class="py-2.5 px-2.5 text-right text-brand-400">${formatPercent(pacTirDisp, 2)}</td>
-            <td class="py-2.5 px-2.5 text-right text-rose-400/90">${formatCurrency(pacTaxDisp)}</td>
-            <td class="py-2.5 px-2.5 text-right text-slate-400">${formatCurrency(picGrossDisp)}</td>
-            <td class="py-2.5 px-2.5 text-right text-pic-300 font-semibold">${formatCurrency(picNetDisp)}</td>
-            <td class="py-2.5 px-2.5 text-right text-pic-400">${formatPercent(picCagrDisp, 2)}</td>
-            <td class="py-2.5 px-2.5 text-right text-rose-400/90">${formatCurrency(picTaxDisp)}</td>
-            <td class="py-2.5 px-3 text-right font-bold ${deltaNet >= 0 ? 'text-pic-400' : 'text-brand-400'}">${formatCurrency(deltaNet)}</td>
-          </tr>
-        `;
-      });
-      UI.statsTableBody.innerHTML = html;
-    }
-
-    function renderFanChart(res) {
-      const ctx = UI.fanChartCanvas.getContext('2d');
-      const d = res.fanData[currentMode];
-      if (chartInstances.fan) chartInstances.fan.destroy();
-
-      chartInstances.fan = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: res.fanData.labels,
-          datasets: [
-            // ==================== PIC (ARANCIONE / AMBRA) ====================
-            // 0: Limite P90
-            {
-              label: 'PIC Limite Superiore (P90)',
-              data: Array.from(d.picP90),
-              borderColor: 'rgba(249, 115, 22, 0.4)',
-              borderWidth: 1,
-              pointRadius: 0,
-              fill: false
-            },
-            // 1: Coda Superiore PIC (P75 -> P90)
-            {
-              label: 'PIC Coda Superiore (P75-P90)',
-              data: Array.from(d.picP75),
-              borderColor: 'rgba(249, 115, 22, 0.6)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(249, 115, 22, 0.08)',
-              fill: '-1',
-              pointRadius: 0
-            },
-            // 2: Cuore Interquartilico PIC (P25 -> P75)
-            {
-              label: 'PIC Cuore Interquartilico (P25-P75)',
-              data: Array.from(d.picP25),
-              borderColor: 'rgba(249, 115, 22, 0.6)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(249, 115, 22, 0.22)',
-              fill: '-1',
-              pointRadius: 0
-            },
-            // 3: Coda Inferiore PIC (P10 -> P25)
-            {
-              label: 'PIC Coda Inferiore (P10-P25)',
-              data: Array.from(d.picP10),
-              borderColor: 'rgba(249, 115, 22, 0.4)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(249, 115, 22, 0.08)',
-              fill: '-1',
-              pointRadius: 0
-            },
-            // 4: Mediana PIC (P50)
-            {
-              label: 'PIC Mediana (P50)',
-              data: Array.from(d.picP50),
-              borderColor: '#f97316',
-              borderWidth: 2.8,
-              pointRadius: 2.5,
-              pointBackgroundColor: '#f97316',
-              fill: false
-            },
-
-            // ==================== PAC (VERDE SMERALDO) ====================
-            // 5: Limite P90
-            {
-              label: 'PAC Limite Superiore (P90)',
-              data: Array.from(d.pacP90),
-              borderColor: 'rgba(16, 185, 129, 0.4)',
-              borderWidth: 1,
-              pointRadius: 0,
-              fill: false
-            },
-            // 6: Coda Superiore PAC (P75 -> P90)
-            {
-              label: 'PAC Coda Superiore (P75-P90)',
-              data: Array.from(d.pacP75),
-              borderColor: 'rgba(16, 185, 129, 0.6)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              fill: '-1',
-              pointRadius: 0
-            },
-            // 7: Cuore Interquartilico PAC (P25 -> P75)
-            {
-              label: 'PAC Cuore Interquartilico (P25-P75)',
-              data: Array.from(d.pacP25),
-              borderColor: 'rgba(16, 185, 129, 0.6)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(16, 185, 129, 0.22)',
-              fill: '-1',
-              pointRadius: 0
-            },
-            // 8: Coda Inferiore PAC (P10 -> P25)
-            {
-              label: 'PAC Coda Inferiore (P10-P25)',
-              data: Array.from(d.pacP10),
-              borderColor: 'rgba(16, 185, 129, 0.4)',
-              borderWidth: 1,
-              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-              fill: '-1',
-              pointRadius: 0
-            },
-            // 9: Mediana PAC (P50)
-            {
-              label: 'PAC Mediana (P50)',
-              data: Array.from(d.pacP50),
-              borderColor: '#10b981',
-              borderWidth: 2.8,
-              pointRadius: 2.5,
-              pointBackgroundColor: '#10b981',
-              fill: false
-            },
-
-            // ==================== BASELINE VERSATO PAC ====================
-            // 10: Capitale Versato Cumulato
-            {
-              label: 'PAC Capitale Versato Cumulato',
-              data: Array.from(d.baselinePac),
-              borderColor: '#94a3b8',
-              borderWidth: 1.5,
-              borderDash: [5, 5],
-              pointRadius: 0,
-              fill: false
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: '#0d1527',
-              borderColor: '#334155',
-              borderWidth: 1,
-              callbacks: { label: (c) => ` ${c.dataset.label}: ${formatCurrency(c.parsed.y)}` }
-            }
-          },
-          scales: {
-            x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-            y: {
-              grid: { color: 'rgba(255,255,255,0.05)' },
-              ticks: { color: '#94a3b8', callback: (v) => '€ ' + (v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v) }
-            }
-          }
-        }
-      });
-    }
-
-    function renderHistogram(res) {
-      const ctx = UI.histogramChartCanvas.getContext('2d');
-      const bins = 26;
-      const maxVal = Math.max(res.getP(res.sPacGross, 96), res.getP(res.sPicGross, 96));
-      const minVal = Math.min(res.sPacGross[0], res.sPicGross[0]);
-      const binWidth = (maxVal - minVal) / bins;
-
-      const pacCounts = new Array(bins).fill(0);
-      const picCounts = new Array(bins).fill(0);
-      const labels = [];
-
-      for (let b = 0; b < bins; b++) {
-        labels.push('€' + ((minVal + b * binWidth) / 1000).toFixed(0) + 'k');
-      }
-
-      for (let i = 0; i < res.sPacNet.length; i++) {
-        let bPac = Math.floor((res.sPacNet[i] - minVal) / binWidth);
-        if (bPac >= 0 && bPac < bins) pacCounts[bPac]++;
-        let bPic = Math.floor((res.sPicNet[i] - minVal) / binWidth);
-        if (bPic >= 0 && bPic < bins) picCounts[bPic]++;
-      }
-
-      if (chartInstances.histogram) chartInstances.histogram.destroy();
-      chartInstances.histogram = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label: 'Frequenza PAC', data: pacCounts, backgroundColor: 'rgba(16, 185, 129, 0.65)', borderRadius: 3 },
-            { label: 'Frequenza PIC', data: picCounts, backgroundColor: 'rgba(249, 115, 22, 0.55)', borderRadius: 3 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 11 } } } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } },
-            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
-          }
-        }
-      });
-    }
-
-    function renderMDDChart(res) {
-      const ctx = UI.mddChartCanvas.getContext('2d');
-      // 25 bin da 4% coprono lo spettro da 0% a 100%
-      const bins = 25;
-      const step = 4;
-      const pacCounts = new Array(bins).fill(0);
-      const picCounts = new Array(bins).fill(0);
-      const labels = Array.from({ length: bins }, (_, i) => `${i * step}%-${(i + 1) * step}%`);
-
-      for (let i = 0; i < res.sPacDD.length; i++) {
-        let bPac = Math.min(bins - 1, Math.floor((res.sPacDD[i] * 100) / step));
-        pacCounts[bPac]++;
-        let bPic = Math.min(bins - 1, Math.floor((res.sPicDD[i] * 100) / step));
-        picCounts[bPic]++;
-      }
-
-      if (chartInstances.mdd) chartInstances.mdd.destroy();
-      chartInstances.mdd = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [
-            { label: 'PAC (Rischio Diluito)', data: pacCounts, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', fill: true, tension: 0.3 },
-            { label: 'PIC (Rischio Immediato)', data: picCounts, borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.15)', fill: true, tension: 0.3 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 10 } } } },
-          scales: {
-            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 8 }, maxRotation: 45 } },
-            y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
-          }
-        }
-      });
-    }
-
-    function readInputs() {
-      const S0 = Math.max(0, parseFloat(UI.initialInvest.value) || 0);
-      const recurring = Math.max(0, parseFloat(UI.recurringInvest.value) || 0);
-      const freq = parseInt(UI.frequency.value, 10);
-      const years = parseInt(UI.horizonYears.value, 10);
-
-      return {
-        S0, recurring, freq, years,
-        rf: (parseFloat(UI.rfRate.value) || 0) / 100.0,
-        mu: (parseFloat(UI.expectedReturn.value) || 5.0) / 100.0,
-        sigma: (parseFloat(UI.volatility.value) || 15.0) / 100.0,
-        enableJumps: UI.enableJumps.checked,
-        jumpFreq: parseFloat(UI.jumpFreq.value) || 0.20,
-        jumpMean: parseFloat(UI.jumpMean.value) || -18,
-        inflation: (parseFloat(UI.inflationRate.value) || 2.0) / 100.0,
-        showReal: UI.showRealTerms.checked,
-        ter: (parseFloat(UI.terRate.value) || 0.20) / 100.0,
-        fixedFee: parseFloat(UI.fixedFee.value) || 0
-      };
-    }
-
-    function syncUI() {
-      const p = readInputs();
-      UI.initialInvestDisplay.textContent = formatCurrency(p.S0);
-      UI.recurringInvestDisplay.textContent = formatCurrency(p.recurring);
-      UI.rfRateDisplay.textContent = `${(p.rf * 100).toFixed(1)}%`;
-
-      const nominalSum = p.S0 + (p.recurring * p.freq * p.years);
-      const pvCapital = calculatePV(p.S0, p.recurring, p.freq, p.years, p.rf);
-
-      UI.picEquivalentCapital.textContent = formatCurrency(pvCapital);
-      UI.picNominalSum.textContent = formatCurrency(nominalSum);
-      UI.inflationDisplay.textContent = `${(p.inflation * 100).toFixed(1)}%`;
-      UI.jumpParamsBox.classList.toggle('opacity-40', !p.enableJumps);
-      UI.jumpParamsBox.classList.toggle('pointer-events-none', !p.enableJumps);
-    }
-
-    function triggerCalculation() {
-      UI.btnText.textContent = 'Simulazione in corso...';
-      UI.calcIcon.classList.add('animate-spin');
-      UI.simulateBtn.disabled = true;
-
-      setTimeout(() => {
-        const params = readInputs();
-        const results = runSimulationEngine(params);
-        updateDashboard(results);
-
-        UI.btnText.textContent = 'Simula 10.000 Scenari';
-        UI.calcIcon.classList.remove('animate-spin');
-        UI.simulateBtn.disabled = false;
-      }, 50);
-    }
-
-    [UI.initialInvest, UI.recurringInvest, UI.frequency, UI.horizonYears, UI.rfRate, UI.expectedReturn, UI.volatility, UI.inflationRate, UI.terRate, UI.fixedFee, UI.jumpFreq, UI.jumpMean].forEach(el => {
-      el.addEventListener('input', syncUI);
-    });
-
-    UI.enableJumps.addEventListener('change', syncUI);
-    UI.showRealTerms.addEventListener('change', triggerCalculation);
-
-    UI.form.addEventListener('submit', (e) => {
-      e.preventDefault();
-      triggerCalculation();
-    });
-
-    UI.resetDefaultsBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      UI.initialInvest.value = 5000;
-      UI.recurringInvest.value = 300;
-      UI.frequency.value = '12';
-      UI.horizonYears.value = 15;
-      UI.rfRate.value = 2.5;
-      UI.expectedReturn.value = 5.0;
-      UI.volatility.value = 15.0;
-      UI.enableJumps.checked = true;
-      UI.jumpFreq.value = 0.20;
-      UI.jumpMean.value = -18;
-      UI.inflationRate.value = 2.0;
-      UI.showRealTerms.checked = false;
-      UI.terRate.value = 0.20;
-      UI.fixedFee.value = 1.00;
-      syncUI();
-      triggerCalculation();
-    });
-
-    UI.viewGrossBtn.addEventListener('click', () => {
-      currentMode = 'gross';
-      UI.viewGrossBtn.className = 'px-3 py-1 rounded-lg bg-accent-500/20 text-accent-300 font-semibold transition';
-      UI.viewNetBtn.className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white transition';
-      if (lastResults) updateDashboard(lastResults);
-    });
-
-    UI.viewNetBtn.addEventListener('click', () => {
-      currentMode = 'net';
-      UI.viewNetBtn.className = 'px-3 py-1 rounded-lg bg-brand-500/20 text-brand-300 font-semibold transition';
-      UI.viewGrossBtn.className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white transition';
-      if (lastResults) updateDashboard(lastResults);
-    });
-
-    UI.copyStatsBtn.addEventListener('click', () => {
-      const rows = UI.statsTableBody.querySelectorAll('tr');
-      let text = 'Percentile\tPAC Lordo\tPAC Netto\tPAC TIR\tTax PAC 26%\tPIC Lordo\tPIC Netto\tPIC CAGR\tTax PIC 26%\tDelta Netto\n';
-      rows.forEach(r => {
-        const cols = Array.from(r.querySelectorAll('td')).map(c => c.innerText.trim());
-        text += cols.join('\t') + '\n';
-      });
-      navigator.clipboard.writeText(text).then(() => {
-        UI.copyStatsBtn.textContent = 'Copiato!';
-        setTimeout(() => UI.copyStatsBtn.innerHTML = `
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copia Tabella`, 2000);
-      });
-    });
-
-    const toggleModal = (show) => {
-      UI.infoModal.classList.toggle('hidden', !show);
-      if (show && window.renderMathInElement) {
-        renderMathInElement(document.getElementById('infoModal'));
-      }
-    };
-    UI.quickInfoBtn.addEventListener('click', () => toggleModal(true));
-    UI.closeInfoBtn.addEventListener('click', () => toggleModal(false));
-    UI.closeInfoBtn2.addEventListener('click', () => toggleModal(false));
-    UI.infoModal.addEventListener('click', (e) => { if (e.target === UI.infoModal) toggleModal(false); });
-
-    window.addEventListener('load', () => {
-      syncUI();
-      triggerCalculation();
-    });
-  </script>
+  <dialog id="guideDialog" aria-labelledby="guideTitle"><div class="dialog-header"><h2 id="guideTitle">Cinque minuti per orientarti.</h2><button id="closeGuideButton" class="button secondary" aria-label="Chiudi la guida">Chiudi</button></div><div class="guide-content"><p>Un <strong>PAC</strong> investe una rata alla volta. Un <strong>PIC</strong> investe subito. Qui il PIC parte dal valore di oggi dei futuri versamenti del PAC: il tasso RF serve a fare questo conto.</p><ol><li><strong>Imposta il piano.</strong> Importo, durata e data delle rate. Il riquadro a sinistra calcola quanto parte nel PIC.</li><li><strong>Scegli le ipotesi.</strong> Il rendimento è una media di molti possibili esiti. La volatilità e i salti ne cambiano la dispersione. Nessuno dei due promette un risultato.</li><li><strong>Leggi il ventaglio.</strong> La mediana divide gli esiti in due metà. Le fasce più ampie mostrano la variabilità a ciascuna data.</li><li><strong>Guarda le code.</strong> Un VaR 99% di 20.000 € indica una perdita superata da circa l'1% degli scenari. L'ES 99% dice quanto si perde mediamente in quell'1%.</li><li><strong>Prova altre ipotesi.</strong> Cambia un parametro alla volta. Usa anche il pulsante Nuovo per verificare la stabilità del campione, soprattutto nelle code.</li></ol><h3>Le parole utili</h3><dl><dt>Sharpe implicito</dt><dd>Confronta lo Sharpe delle ipotesi con quello del modello senza e con salti. La scheda principale evidenzia il modello attivo, dopo TER. Si riferiscono all’asset, non al rendimento personale del PAC.</dd><dt>TIR e CAGR</dt><dd>Rendimenti annui netti. Il TIR tiene conto delle date di ogni rata del PAC; il CAGR misura la crescita annua equivalente del PIC. N.D. significa che non esiste un TIR finito per quei flussi.</dd><dt>Euro di oggi</dt><dd>I capitali finali sono deflazionati. Per confrontarli con i versamenti, ogni rata è riportata al potere d'acquisto della propria data. Il TIR reale segue la relazione di Fisher.</dd><dt>Drawdown</dt><dd>Il peggior calo da un massimo precedente. Quello di mercato esclude i nuovi versamenti; quello del saldo può recuperare grazie alle rate. Le misure usano 24 osservazioni l'anno e possono perdere i minimi tra due osservazioni.</dd><dt>Alternativa RF</dt><dd>La crescita degli stessi flussi al tasso RF, con la stessa imposta finale semplificata. È un riferimento teorico, non un prodotto finanziario disponibile.</dd></dl><p><a href="https://github.com/D4Br1c3/pac-montecarlo-simulator#readme" target="_blank" rel="noopener noreferrer">Apri la guida completa ↗</a></p></div></dialog>
+  <noscript><p class="notice">Per usare il simulatore devi abilitare JavaScript nel browser.</p></noscript>
 </body>
 </html>
