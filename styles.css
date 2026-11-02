@@ -1386,3 +1386,101 @@ dialog::backdrop {
   }
 
 }
+
+.educational-banner {
+  border: 1px solid #4b5266;
+  border-left: 3px solid var(--blue);
+  background: #142235;
+  padding: 15px 19px;
+  border-radius: 12px;
+  margin-bottom: 28px;
+}
+
+.educational-banner h2 {
+  font-size: .92rem;
+  margin-bottom: 6px;
+}
+
+.educational-banner p {
+  color: var(--muted);
+  font-size: .84rem;
+  line-height: 1.6;
+}
+
+.cost-instrument {
+  margin-bottom: 13px;
+  color: var(--text);
+  font-weight: 600;
+  font-size: .82rem;
+}
+
+.sharpe-comparison {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 5px;
+  gap: 5px;
+}
+
+.sharpe-comparison > div {
+  border-radius: 11px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+}
+
+.sharpe-comparison > div.is-active {
+  border-color: #436d82;
+  background: #213d5040;
+}
+
+.sharpe-comparison span,
+.sharpe-comparison small {
+  display: block;
+  color: var(--muted);
+  font-size: .74rem;
+}
+
+.sharpe-comparison strong {
+  display: block;
+  font-size: 1.35rem;
+  color: var(--blue);
+  font-variant-numeric: tabular-nums;
+  margin: 4px 0;
+}
+
+.legal-details strong {
+  color: var(--text);
+}
+
+@media (max-width: 650px) {
+  .sharpe-comparison > div {
+    padding: 10px 7px;
+  }
+  .sharpe-comparison span {
+    min-height: 2.7em;
+    font-size: .72rem;
+  }
+  .sharpe-comparison small {
+    font-size: .68rem;
+  }
+  .educational-banner {
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+}
+
+@media print {
+  .educational-banner {
+    display: block;
+    background: white;
+    border-color: #888;
+  }
+  .educational-banner p,
+  .sharpe-comparison span,
+  .sharpe-comparison small,
+  .sharpe-comparison strong {
+    color: black;
+  }
+  .legal-details {
+    display: block;
+  }
+}

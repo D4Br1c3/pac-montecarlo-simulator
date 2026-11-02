@@ -11,7 +11,7 @@
   const QUANTILES = [1, 5, 10, 25, 50, 75, 90, 95, 99];
   const DEFAULTS = Object.freeze({
     initial: 5000, recurring: 300, frequency: 12, years: 15, timing: 'end',
-    expectedReturn: 0.05, volatility: 0.15, riskFree: 0.025,
+    expectedReturn: 0.0625, volatility: 0.15, riskFree: 0.025,
     jumps: true, jumpFrequency: 0.2, jumpMean: -0.18, jumpLogStd: 0.05,
     inflation: 0.02, ter: 0.002, fee: 1, taxRate: 0.26,
     simulations: 10000, seed: 42

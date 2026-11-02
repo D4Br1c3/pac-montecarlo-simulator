@@ -1,6 +1,6 @@
 # PAC vs PIC: il tempo, il capitale, il rischio
 
-**Conviene investire una rata alla volta o una somma subito?** Questo laboratorio ti aiuta a esplorare la domanda con le tue ipotesi, mostrando sia il capitale finale sia gli scenari sfavorevoli.
+**Come cambiano gli esiti investendo una rata alla volta oppure una somma subito?** Questo laboratorio esplora la domanda con ipotesi liberamente modificabili, mostrando capitale finale e scenari sfavorevoli. Non fornisce raccomandazioni di investimento.
 
 **[Apri il simulatore](https://d4br1c3.github.io/pac-montecarlo-simulator/)**
 
@@ -8,13 +8,15 @@ Non devi installare Python, creare account o caricare dati. La simulazione gira 
 
 ![Anteprima del simulatore: confronto PAC e PIC, scenari e rischio](docs/anteprima.jpg)
 
+> **Solo simulazioni didattiche, non consulenza finanziaria.** Gli esiti sono ipotetici, non previsioni o garanzie. È possibile perdere anche tutto il capitale investito. **I rendimenti passati non sono garanzia di rendimenti futuri.** Leggi le [avvertenze complete](docs/AVVERTENZE.md).
+
 ## Parti da qui
 
 1. **Costruisci il PAC.** Inserisci il versamento iniziale, la rata, la frequenza e la durata. Scegli se la rata arriva a inizio o a fine periodo.
-2. **Imposta il mercato.** Scegli rendimento atteso, volatilità e tasso privo di rischio (RF). Puoi includere salti improvvisi di mercato e modificare costi, imposte e inflazione.
+2. **Imposta il mercato.** Scegli liberamente rendimento atteso, volatilità di base e tasso privo di rischio (RF). Puoi includere salti improvvisi di mercato e modificare costi, imposte e inflazione.
 3. **Premi “Simula gli scenari”.** Leggi la mediana e le fasce del grafico, poi osserva VaR ed Expected Shortfall. Non fermarti al risultato medio.
 
-Per orientarti trovi il pulsante **Come si legge** anche nell'app. I valori iniziali sono esempi didattici: non sono previsioni aggiornate sull'azionario globale.
+Per orientarti trovi il pulsante **Come si legge** anche nell'app. I valori iniziali sono esempi didattici: non sono previsioni aggiornate sull'azionario globale. Si parte da **RF 2,5%, volatilità di base 15% e rendimento atteso 6,25%**, coerenti con uno **Sharpe delle ipotesi di 0,25**, prima di costi e salti. Puoi cambiare rendimento e volatilità indipendentemente: lo Sharpe viene ricalcolato, non impone un vincolo ai tuoi input.
 
 ## Che cosa stai confrontando
 
@@ -61,14 +63,21 @@ Puoi scegliere il riferimento:
 
 Con 10.000 scenari, l'ES 99% dipende da circa **100 esiti**. Aumenta a 25.000 o 50.000 scenari e prova anche un nuovo campione: le stime delle code restano incerte e dipendono dal modello.
 
-### Lo Sharpe e la volatilità dei salti
+### Tre Sharpe, sempre visibili
 
-L'app distingue due numeri:
+Il riquadro di confronto resta leggibile con i salti sia accesi sia spenti:
 
-- **Sharpe semplificato:** `(rendimento atteso − RF) / volatilità di base`. Con 5%, 2,5% e 15% vale circa **0,167**. È una lettura approssimata degli input, prima dei costi e senza il rischio dei salti.
-- **Sharpe annuo del modello:** usa la media e la deviazione standard del rendimento annuo semplice dell'asset, comprendendo salti e TER. Con le impostazioni iniziali vale circa **0,127**: rendimento medio dopo TER circa 4,79%, deviazione standard annua circa 18,07%.
+| Indicatore | Cosa comprende | Valore iniziale |
+| --- | --- | --- |
+| **Sharpe delle ipotesi** | Rapporto tra premio rispetto al RF e volatilità di base, prima di costi e salti | **0,250** |
+| **Modello senza salti** | Media e rischio del rendimento annuo, dopo TER | **0,221** |
+| **Modello con salti** | Media e rischio annui, dopo TER e con i salti impostati | **0,193** |
 
-Attivare i salti mantiene il rendimento atteso impostato, grazie alla compensazione del drift, ma aumenta la dispersione. Quindi la volatilità di base del 15% non è la deviazione standard annua complessiva. Se il rischio è zero, lo Sharpe è **N.D.**, non infinito né zero.
+La scheda principale evidenzia lo Sharpe dello scenario effettivamente simulato. Il confronto mantiene i parametri dei salti anche quando il modulo è disattivato; non attiva i salti di nascosto. Modificare un parametro richiede un nuovo calcolo, segnalato dall'app.
+
+Gli Sharpe del modello utilizzano i momenti esatti del rendimento annuo semplice. I costi e la convenzione sui tassi spiegano la differenza rispetto al rapporto approssimato degli input. Attivando i salti, il rendimento atteso resta invariato e il rischio cresce. Con i default, la media annua dopo TER è circa **6,04%**, la volatilità annua è circa **16,00% senza salti** e **18,29% con salti**.
+
+Quindi la volatilità di base del 15% non è il rischio annuo complessivo del modello. Lo Sharpe di 0,25 è un'ipotesi iniziale modificabile, non una stima universale convalidata per tutti i mercati. Le formule sono nella [metodologia](docs/METODOLOGIA.md), senza appesantire l'interfaccia. Se il rischio è zero, il rapporto è N.D.
 
 ### Drawdown: cosa succede durante il piano
 
@@ -82,16 +91,16 @@ Mediana, P95 e P99 del massimo drawdown sono distinti dal VaR a scadenza. Il dra
 ## Costi, imposte, inflazione
 
 - La commissione viene prelevata da ogni **versamento positivo**. Se non c'è un ordine non c'è una commissione. Un ordine deve superare il suo costo.
-- Il TER è un prelievo proporzionale continuo: un tasso `c` applica il fattore `exp(−c × anni)`.
+- **ETF / Fondo comune:** il TER o costo annuo rappresenta i costi correnti del prodotto. Non sommare due volte oneri già inclusi nel TER e inserisci il rendimento prima di tali costi. Il modello applica il prelievo continuo `exp(−c × anni)`.
 - L'imposta, inizialmente al 26% e modificabile, si applica una sola volta al guadagno nominale positivo sul totale versato. Non sono previsti rimborsi per perdite. È un modello fiscale semplificato, non una ricostruzione integrale della fiscalità italiana.
-- Non sono inclusi bollo, commissioni di vendita, spread, dividendi distribuiti, recupero delle minusvalenze o regole specifiche dei singoli strumenti.
+- Non sono inclusi bollo, commissioni percentuali di ingresso/uscita e di performance, commissioni di vendita, spread, dividendi distribuiti, recupero delle minusvalenze o regole specifiche dei singoli strumenti.
 - **Euro di oggi** converte i capitali al potere d'acquisto iniziale. Ogni versamento è deflazionato alla propria data; i rendimenti netti diventano reali tramite la relazione di Fisher. L'imposta continua a essere calcolata sui guadagni **nominali**.
 
 ## Ripetere, confrontare, esportare
 
 Il numero chiamato **seed** identifica il campione casuale. Stesso seed e stesse ipotesi producono gli stessi risultati; il pulsante **Nuovo** ne prepara un altro. Se modifichi le ipotesi, l'app segnala che i risultati devono essere ricalcolati.
 
-Passare da lordo a netto, agli euro di oggi o a un diverso riferimento del rischio riutilizza i medesimi scenari. **Copia tabella** trasferisce i percentili in formato tabulato. **Scarica CSV** include anche ipotesi, seed, VaR/ES, Sharpe e drawdown. Il CSV usa `;` come separatore e la virgola decimale, per agevolare l'apertura in Excel italiano.
+Passare da lordo a netto, agli euro di oggi o a un diverso riferimento del rischio riutilizza i medesimi scenari. **Copia tabella** trasferisce i percentili in formato tabulato. **Scarica CSV** include anche ipotesi, seed, VaR/ES, Sharpe e drawdown. Entrambe le esportazioni riportano avvertenze; il CSV contiene tutti e tre gli Sharpe e identifica il modello attivo. Il CSV usa `;` come separatore e la virgola decimale, per agevolare l'apertura in Excel italiano.
 
 ## Usarlo dal tuo computer
 
@@ -111,6 +120,7 @@ Una **pull request** è una proposta di aggiornamento separata dal sito pubblica
 
 ## Per approfondire o contribuire
 
+- [Avvertenze e limiti d’uso](docs/AVVERTENZE.md): natura delle simulazioni, rischi e confini del servizio.
 - [Metodologia e formule](docs/METODOLOGIA.md): convenzioni sui tassi, modello di Merton, quantili, rischio e limiti.
 - [Revisione del modello](docs/REVISIONE.md): problemi rilevati nella prima versione e correzioni.
 - [Verifiche del browser](tests/README.md): controlli dell'interfaccia e dei download.
@@ -134,4 +144,4 @@ I test verificano formule note di attualizzazione e capitalizzazione, date dei v
 - MathWorks, [Merton jump diffusion model](https://www.mathworks.com/help/finance/merton.html): processo composto di Poisson e moltiplicatori lognormali.
 - Megan Finlay e Josef Zorn, Vanguard, [Cost averaging: Invest now or temporarily hold your cash?](https://corporate.vanguard.com/content/dam/corp/research/pdf/cost_averaging_invest_now_or_temporarily_hold_your_cash.pdf), 2023: confronto su una somma già disponibile, diverso dal PAC finanziato nel tempo.
 
-Questo è uno strumento didattico. Non usa dati storici per calibrare le ipotesi, non replica un indice e non fornisce una raccomandazione di investimento.
+Questo è uno strumento didattico. Non usa dati storici per calibrare le ipotesi, non replica un indice e non fornisce una raccomandazione di investimento. Le avvertenze non costituiscono una certificazione legale del progetto o dei suoi futuri utilizzi.

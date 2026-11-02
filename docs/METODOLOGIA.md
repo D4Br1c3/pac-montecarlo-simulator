@@ -1,6 +1,6 @@
 # Metodologia del simulatore PAC vs PIC
 
-Questa pagina documenta il modello implementato in `engine.js`. Le ipotesi iniziali non sono una calibrazione storica né una previsione sull'MSCI World.
+Questa pagina documenta il modello implementato in `engine.js`. Le ipotesi iniziali non sono una calibrazione storica né una previsione sull'MSCI World. Rendimento, volatilità e RF restano input indipendenti: il default 6,25% / 15% / 2,5% implica uno Sharpe base di 0,25, senza bloccare le scelte dell’utente.
 
 ## 1. Flussi e tassi
 
@@ -88,9 +88,13 @@ S_{\mathrm{modello}}=\frac{e^g-1-r_f}{e^g\sqrt{e^v-1}}.
 
 Queste espressioni derivano dai primi due momenti del processo composto: `E[G²] = exp(2g+v)`. Il RF è deterministico e annuo effettivo; quindi sottrarlo non modifica la varianza.
 
-Con gli input iniziali, lo Sharpe base è 0,166667 e quello completo 0,126709. La media annua dopo TER è 4,790210% e la deviazione standard annua 18,074590%. La metrica riguarda l'asset, **prima di commissioni fisse e imposte**, non il TIR del PAC. Resta nominale anche quando gli importi sono espressi in euro di oggi. Se la deviazione standard è zero, il rapporto non è definito e viene mostrato N.D.
+Con gli input iniziali, lo Sharpe base è 0,25. Dopo TER, lo Sharpe del modello senza salti è 0,221169 e quello con salti è 0,193426. La media annua dopo TER è 6,037712%; la deviazione standard annua è 15,995547% senza salti e 18,289764% con salti. La metrica riguarda l'asset, **prima di commissioni fisse e imposte**, non il TIR del PAC. Resta nominale anche quando gli importi sono espressi in euro di oggi. Se la deviazione standard è zero, il rapporto non è definito e viene mostrato N.D.
+
+L’interfaccia mostra sempre il rapporto degli input e i due scenari del modello, evidenziando quello attivo. Il flag dei salti cambia soltanto il processo simulato: non cancella frequenza o intensità impostate e non modifica rendimento e volatilità scelti dall’utente. I valori di confronto sono analitici, non stime rumorose dello Sharpe da un campione Monte Carlo. Lo Sharpe 0,25 è una scelta didattica iniziale; non viene presentato come un dato universale stabilito dalla letteratura.
 
 ## 4. Commissioni e imposta
+
+Il costo annuo può descrivere un **ETF / Fondo comune**, usando TER o oneri correnti senza duplicare costi già inclusi. L’ipotesi di rendimento deve essere prima di questi oneri. Costi di ingresso/uscita percentuali, commissioni di performance e classi di quote specifiche non sono modellati.
 
 Ogni importo è l'esborso totale dell'investitore, **commissione di acquisto inclusa**. Il capitale che entra nell'asset è `versamento − commissione`. Non si addebitano ordini su versamenti zero. Se una rata positiva non supera la commissione, l'app rifiuta i parametri. Un versamento iniziale e una rata anticipata al tempo zero restano due ordini distinti.
 

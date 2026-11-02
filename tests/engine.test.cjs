@@ -170,12 +170,36 @@ test('GBM quantiles agree with analytic lognormal quantiles within Monte Carlo e
 
 test('annual Sharpe uses full annual simple-return variance, including jumps and TER', () => {
   const m = E.modelMoments(E.DEFAULTS);
-  close(m.simpleSharpe, 1 / 6);
-  close(m.mean, 0.04790209860069972);
-  close(m.standardDeviation, 0.18074589860115892);
-  close(m.sharpe, 0.12670881484971563);
+  close(m.simpleSharpe, 0.25);
+  close(m.mean, 0.060377123584041376);
+  close(m.standardDeviation, 0.1828976354892679);
+  close(m.sharpe, 0.19342581159895442);
   assert.ok(m.standardDeviation > E.DEFAULTS.volatility);
   assert.equal(E.modelMoments(deterministic()).sharpe, null);
+});
+
+test('return and volatility remain independent user assumptions, not locked to target Sharpe', () => {
+  const p = { ...E.DEFAULTS, expectedReturn: 0.09, volatility: 0.2, riskFree: 0.03, simulations: 10, years: 1 };
+  const r = E.simulate(p);
+  close(r.params.expectedReturn, 0.09);
+  close(r.params.volatility, 0.2);
+  close(r.moments.simpleSharpe, 0.3);
+  assert.notEqual(r.moments.simpleSharpe, 0.25);
+});
+
+test('with/without-jump comparisons retain jump assumptions while the active switch changes', () => {
+  const p = { ...E.DEFAULTS, jumps: false, simulations: 10, years: 1 };
+  const r = E.simulate(p);
+  const without = E.modelMoments({ ...r.params, jumps: false });
+  const withJumps = E.modelMoments({ ...r.params, jumps: true });
+  close(r.params.jumpFrequency, 0.2);
+  close(r.params.jumpMean, -0.18);
+  close(r.moments.sharpe, 0.22116857665713258);
+  close(r.moments.sharpe, without.sharpe);
+  close(withJumps.sharpe, 0.19342581159895442);
+  close(withJumps.mean, without.mean);
+  assert.ok(withJumps.standardDeviation > without.standardDeviation);
+  close(withJumps.simpleSharpe, without.simpleSharpe);
 });
 
 test('invalid or missing values are rejected instead of producing plausible-looking results', () => {

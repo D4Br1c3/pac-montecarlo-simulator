@@ -23,10 +23,6 @@
       else if (input.tagName === 'SELECT' && key === 'timing') p[key] = input.value;
       else p[key] = input.value.trim() === '' ? NaN : Number(input.value) / (percentInputs.has(key) ? 100 : 1);
     }
-    if (!p.jumps) {
-      p.jumpFrequency = 0;
-      p.jumpMean = E.DEFAULTS.jumpMean;
-    }
     return p;
   }
 
@@ -37,13 +33,9 @@
 
   function syncParameters() {
     const p = readParams();
-    $('jumpFields').hidden = !p.jumps;
-    $('jumpHint').hidden = !p.jumps;
-    $('jumpFrequency').disabled = !p.jumps;
-    $('jumpMean').disabled = !p.jumps;
     if (Number.isFinite(p.jumpFrequency)) {
       $('jumpHint').textContent = p.jumpFrequency > 0
-        ? `${number.format(p.jumpFrequency)} salti/anno: in media uno ogni ${number.format(1 / p.jumpFrequency)} anni. Il rendimento atteso resta invariato; la dispersione cambia.`
+        ? `${number.format(p.jumpFrequency)} salti/anno: in media uno ogni ${number.format(1 / p.jumpFrequency)} anni. Gli stessi parametri alimentano il confronto Sharpe.`
         : 'Frequenza zero: nessun salto, anche con il modulo attivo.';
     }
     const validDates = Number.isInteger(p.years) && p.years >= 1 && p.years <= 40 && [4, 12, 24].includes(p.frequency);
@@ -140,9 +132,17 @@
     $('picCagr').textContent = `CAGR annuo netto${real ? ' reale' : ''}: ${percent(netRate((picNetMedian / r.pv) ** (1 / p.years) - 1), 2, true)}`;
     $('winRate').textContent = percent(r.wins[mode].pic);
     $('otherWinRates').textContent = `PAC: ${percent(r.wins[mode].pac)} · Parità: ${percent(r.wins[mode].tie)}`;
+    const withoutJumps = E.modelMoments({ ...p, jumps: false });
+    const withJumps = E.modelMoments({ ...p, jumps: true });
     $('modelSharpe').textContent = ratio(r.moments.sharpe);
-    $('sharpeExplanation').innerHTML = `<strong>Sharpe semplificato: ${ratio(r.moments.simpleSharpe)}</strong> = (rendimento atteso − RF) / volatilità di base, prima dei costi e senza salti. Il modello completo ha rendimento annuo medio dopo TER ${percent(r.moments.mean, 2)} e deviazione standard annua ${percent(r.moments.standardDeviation, 2)}. Lo Sharpe principale è nominale, prima di commissioni e imposte.`;
-    $('comparisonExplanation').textContent = `Confronto a pari valore attuale: PIC ${money(r.pv)} oggi; PAC ${money(r.totalDeposited)} distribuiti nel tempo. Commissioni pagate: PAC ${money(r.fees.pac)}, PIC ${money(r.fees.pic)}. Non sono simulati prestiti né liquidità in attesa di investimento.`;
+    $('modelSharpeLabel').textContent = `${p.jumps ? 'Salti attivi' : 'Salti disattivati'} · dopo TER`;
+    $('inputSharpe').textContent = ratio(r.moments.simpleSharpe);
+    $('noJumpSharpe').textContent = ratio(withoutJumps.sharpe);
+    $('jumpSharpe').textContent = ratio(withJumps.sharpe);
+    $('noJumpSharpeBox').classList.toggle('is-active', !p.jumps);
+    $('jumpSharpeBox').classList.toggle('is-active', p.jumps);
+    $('sharpeExplanation').textContent = `Modello attivo: rendimento medio annuo dopo TER ${percent(r.moments.mean, 2)} · volatilità annua ${percent(r.moments.standardDeviation, 2)}. Sharpe nominali, prima di commissioni e imposte.`;
+    $('comparisonExplanation').textContent = `Pari valore attuale: PIC ${money(r.pv)} oggi · PAC ${money(r.totalDeposited)} distribuiti nel tempo. Costi delle operazioni: PAC ${money(r.fees.pac)} · PIC ${money(r.fees.pic)}.`;
     $('resultStamp').textContent = `${number.format(p.simulations)} scenari · ${p.years} anni · rate a ${p.timing === 'end' ? 'fine' : 'inizio'} periodo · campione ${p.seed} · ${real ? 'euro di oggi' : 'euro nominali'}`;
     $('fanSubtitle').textContent = `${mode === 'net' ? 'Capitali dopo la liquidazione ipotetica' : 'Capitali prima dell’imposta'}, ${real ? 'in euro di oggi' : 'in euro nominali'}. Mediana e fasce a ogni anno.`;
     $('histogramSubtitle').textContent = `Capitali ${mode === 'net' ? 'netti' : 'lordi'} a scadenza, ${real ? 'in euro di oggi' : 'nominali'}. Percentuale degli scenari per intervallo.`;
@@ -287,11 +287,11 @@
 
   function exportRows() {
     const r = lastResult, p = r.params, v = E.view(r, mode, real, $('riskReference').value);
-    const rows = [['PAC vs PIC - simulazione'], ['Valori monetari', real ? 'Euro di oggi' : 'Nominali'], ['Modalità rischio e grafici', mode], ['Riferimento rischio', $('riskReference').value], ['Tassi dei parametri', 'Decimali annui, salvo dove indicato'], [], ['Parametro', 'Valore']];
+    const rows = [['PAC vs PIC - simulazione didattica'], ['Avvertenza', 'Non costituisce consulenza finanziaria, legale o fiscale, raccomandazione personalizzata o offerta di investimento.'], ['Rischio', 'Risultati ipotetici, non previsioni o garanzie. Possibile perdita anche totale del capitale. I rendimenti passati non sono garanzia di rendimenti futuri.'], ['Limiti', 'Parametri non calibrati a dati storici o quotazioni aggiornate. Costi e imposte semplificati.'], ['Valori monetari', real ? 'Euro di oggi' : 'Nominali'], ['Modalità rischio e grafici', mode], ['Riferimento rischio', $('riskReference').value], ['Tassi dei parametri', 'Decimali annui, salvo dove indicato'], [], ['Parametro', 'Valore']];
     Object.entries(p).forEach(pair => rows.push(pair));
     rows.push([], tableHeaders, ...numericRows(), [], ['Rischio a scadenza', 'PAC (EUR)', 'PIC (EUR)']);
     for (const [label, index, key] of [['VaR95', 0, 'var'], ['ES95', 0, 'es'], ['VaR99', 1, 'var'], ['ES99', 1, 'es']]) rows.push([label, v.tails.pac[index][key], v.tails.pic[index][key]]);
-    rows.push(['Riferimento perdita', v.references.pac, v.references.pic], ['Probabilità perdita (%)', v.lossProbability.pac * 100, v.lossProbability.pic * 100], [], ['Sharpe annuo modello', r.moments.sharpe], ['Sharpe semplificato', r.moments.simpleSharpe], ['Rendimento medio annuo dopo TER', r.moments.mean], ['Deviazione standard annua modello', r.moments.standardDeviation]);
+    rows.push(['Riferimento perdita', v.references.pac, v.references.pic], ['Probabilità perdita (%)', v.lossProbability.pac * 100, v.lossProbability.pic * 100], [], ['Sharpe annuo modello attivo, dopo TER', r.moments.sharpe], ['Sharpe ipotesi, prima di costi e salti', r.moments.simpleSharpe], ['Sharpe modello senza salti, dopo TER', E.modelMoments({ ...p, jumps: false }).sharpe], ['Sharpe modello con salti, dopo TER', E.modelMoments({ ...p, jumps: true }).sharpe], ['Rendimento medio annuo dopo TER', r.moments.mean], ['Deviazione standard annua modello', r.moments.standardDeviation]);
     rows.push([], ['Massimo drawdown nominale (%)', 'Mediana', 'P95', 'P99']);
     for (const [name, values] of Object.entries(r.drawdown)) rows.push([name, ...[0.5, 0.95, 0.99].map(q => E.quantile(values, q) * 100)]);
     rows.push([], ['Differenza netta appaiata PIC-PAC (EUR)', 'P5', 'Mediana', 'P95'], ['Stessi percorsi', ...[0.05, 0.5, 0.95].map(q => E.quantile(r.delta.net, q) / v.discount)]);
@@ -349,7 +349,8 @@
   $('csvButton').addEventListener('click', downloadCsv);
   $('copyButton').addEventListener('click', async () => {
     if (!lastResult) return;
-    const text = [tableHeaders, ...numericRows()].map(row => row.map(x => typeof x === 'number' ? x.toLocaleString('it-IT', { useGrouping: false, maximumFractionDigits: 8 }) : String(x)).join('\t')).join('\n');
+    const warning = `Simulazione didattica, non consulenza finanziaria. Risultati ipotetici, non garantiti. I rendimenti passati non sono garanzia di rendimenti futuri. Campione ${lastResult.params.seed}.`;
+    const text = [[warning], tableHeaders, ...numericRows()].map(row => row.map(x => typeof x === 'number' ? x.toLocaleString('it-IT', { useGrouping: false, maximumFractionDigits: 8 }) : String(x)).join('\t')).join('\n');
     try {
       await navigator.clipboard.writeText(text);
       $('copyButton').textContent = 'Copiata';
@@ -361,6 +362,9 @@
   $('guideDialog').addEventListener('click', event => {
     const rect = $('guideDialog').getBoundingClientRect();
     if (event.target === $('guideDialog') && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) $('guideDialog').close();
+  });
+  document.querySelectorAll('a[href="#avvertenze"]').forEach(link => {
+    link.addEventListener('click', () => { $('avvertenze').open = true; });
   });
   syncParameters();
   calculate();

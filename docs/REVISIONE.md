@@ -8,7 +8,7 @@ La revisione parte dalla versione `80a44222714a55b7d6e74d8e304e44a22127c3b9` del
 | Convenzione RF | Il RF veniva diviso per la frequenza senza spiegare che ciò implicava un tasso nominale convertibile. | RF annuo effettivo, equivalente per periodo tramite capitalizzazione composta. |
 | Rendimento atteso | L'input percentuale era usato direttamente come drift continuo, dando una media annua `exp(mu)−1`, non `mu`. | Input come rendimento annuo aritmetico effettivo; drift convertito con `log1p`. |
 | Salti | La probabilità Bernoulli permetteva al massimo un salto per periodo. Il moltiplicatore normale veniva tagliato arbitrariamente. La descrizione di Merton non coincideva pienamente con l'implementazione. | Poisson composto, più salti per intervallo, moltiplicatori lognormali positivi, compensazione coerente della media. |
-| Sharpe | Il rapporto non era mostrato e la volatilità di base non comprendeva i salti. | Sharpe semplificato degli input e Sharpe annuo completo calcolato dai momenti del modello. |
+| Sharpe | Il rapporto non era mostrato e la volatilità di base non comprendeva i salti. | Sharpe delle ipotesi e Sharpe annui senza/con salti, sempre visibili; il modello attivo è evidenziato. Default RF 2,5%, volatilità di base 15%, rendimento 6,25%, Sharpe delle ipotesi 0,25. Gli input rimangono liberi. |
 | Input zero | L'uso di `valore || default` sostituiva alcuni zeri con valori predefiniti. | Lettura numerica esplicita, limiti validati e zero ammesso dove previsto. |
 | Commissioni | La stima contava anche ordini su versamenti zero; versamenti inferiori alla commissione venivano azzerati silenziosamente. | Solo ordini finanziati, costo incluso nel versamento, controllo degli ordini insufficienti. |
 | TIR | L'intervallo inferiore di ricerca non copriva l'intero dominio delle perdite annue. Non venivano distinti i casi senza soluzione. | Ricerca nel log-tasso, intervallo adattivo, N.D. quando non esiste un TIR finito. |
@@ -22,6 +22,8 @@ La revisione parte dalla versione `80a44222714a55b7d6e74d8e304e44a22127c3b9` del
 | Fiscalità | Il testo dichiarava una fiscalità “integrale” e un riferimento normativo generico. | Modello semplificato e aliquota modificabile, con esclusioni dichiarate e costo fiscale coerente. |
 | Architettura | Un solo HTML di oltre mille righe mescolava calcoli, interfaccia e dipendenze remote. | Motore puro testabile, interfaccia e CSS separati, worker, Chart.js locale con licenza. |
 | Istruzioni | La guida iniziava da formule e termini specialistici. | Avvio in tre passi, esempio numerico, glossario, aiuto nell'app e metodologia tecnica separata. |
+
+Ulteriori indicazioni per la pubblicazione: etichette **ETF / Fondo comune**, avvertenza visibile sopra i controlli, avvertenze complete nella pagina, inclusione delle avvertenze nelle esportazioni e [documentazione dei limiti d’uso](AVVERTENZE.md). Il testo non attribuisce al disclaimer un’esenzione generale da responsabilità.
 
 ## Verifiche
 
